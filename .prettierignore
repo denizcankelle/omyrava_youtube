@@ -1,0 +1,6 @@
+.next
+node_modules
+data
+output
+package-lock.json
+ai

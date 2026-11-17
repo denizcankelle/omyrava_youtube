@@ -1,0 +1,29 @@
+OMYRAVA STUDIO - YAPAY ZEKA MUZIK (Stable Audio 3) KURULUMU
+===========================================================
+
+Gereken: NVIDIA ekran karti (RTX 5070 Ti uygun), ~15 GB bos disk (D:), internet.
+Model ucretsiz; yillik geliri 1 milyon dolarin altindaki isletmeler icin ticari kullanim
+ucretsiz (Stability AI Community License). Metin kodlayici Google Gemma kullanim sartlarina tabidir.
+
+1) Hugging Face hesabi ac:  https://huggingface.co/join
+
+2) Su iki sayfada, giris yapmis haldeyken, lisansi kabul et ("Agree and access repository"):
+   - https://huggingface.co/stabilityai/stable-audio-3-medium
+   - https://huggingface.co/google/t5gemma-b-b-ul2
+   (Ikinci sayfada kabul butonu yoksa sorun degil, acik demektir.)
+   Yedek model icin istege bagli:
+   - https://huggingface.co/stabilityai/stable-audio-3-small-music
+
+3) Erisim anahtari olustur: https://huggingface.co/settings/tokens
+   "Create new token" -> tur: "Read" -> olustur -> anahtari kopyala (hf_ ile baslar).
+   omyrava-studio klasorundeki .env dosyasini Not Defteri ile ac, en alta su satiri ekle:
+       HF_TOKEN=hf_buraya_kendi_anahtarin
+   Kaydet. (Bu anahtari kimseyle paylasma; Claude'a da yazma.)
+
+4) AI-KUR.bat dosyasina cift tikla. Ilk kurulum 10-30 dakika surebilir (PyTorch ve model indirilir).
+   Sonunda "YAPAY ZEKA HAZIR" yazarsa ai\test-medium.wav deneme muzigini dinleyebilirsin.
+
+5) BASLAT.bat ile paneli yeniden ac. Muzik kategorilerinde (Nordic, Piano, Piano & Violin,
+   Strings) otomatik uretim artik yapay zeka muzigini kullanir. Stüdyo bolumunden elle de uretebilirsin.
+
+Sorun olursa: ai\kurulum.log ve ai\ai-durum.json dosyalarini Claude okuyabilir; ona haber ver.

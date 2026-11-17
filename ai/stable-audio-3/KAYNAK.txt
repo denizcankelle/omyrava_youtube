@@ -1,0 +1,2 @@
+790793b89ddceea612be9ce42ff6830d18f6fa57 Mon Nov 2 12:29:05 2026 -0800
+Kaynak: https://github.com/Stability-AI/stable-audio-3 (MIT). Bu klasör yalnızca Python kaynak kodunu içerir; model ağırlıkları Hugging Face'ten indirilir.

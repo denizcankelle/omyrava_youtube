@@ -1,0 +1,27 @@
+OMYRAVA STUDIO - YAPAY ZEKA 4K GORSEL (FLUX.1-schnell) KURULUMU
+===============================================================
+
+Gereken: NVIDIA ekran karti (RTX 5070 Ti uygun), en az 16 GB RAM, ~30 GB bos disk (D:), internet.
+Lisans: FLUX.1-schnell Apache-2.0 (ticari kullanim serbest). 4K buyutme: Real-ESRGAN (BSD-3).
+Uretilen gorseller sana aittir; lisans kaydi otomatik eklenir.
+
+1) Hugging Face hesabin yoksa ac:  https://huggingface.co/join
+   (Muzik yapay zekasi icin actiysan ayni hesap.)
+
+2) Giris yapmis haldeyken su sayfada kosullari kabul et ("Agree and access repository"):
+   - https://huggingface.co/black-forest-labs/FLUX.1-schnell
+
+3) .env dosyasinda HF_TOKEN= satiri yoksa: https://huggingface.co/settings/tokens
+   "Create new token" -> tur: "Read" -> anahtari kopyala (hf_ ile baslar) ve .env'in en altina:
+       HF_TOKEN=hf_buraya_kendi_anahtarin
+   (Bu anahtari kimseyle paylasma; Claude'a da yazma.)
+
+4) GORSEL-KUR.bat dosyasina cift tikla. Ilk kurulum 20-60 dakika surebilir:
+   PyTorch (~3 GB) + FLUX parcalari (~20 GB) + 4K buyutucu (64 MB) indirilir.
+   Sonunda "GORSEL YAPAY ZEKASI HAZIR" yazarsa ai\test-gorsel.png deneme gorselini ac.
+
+5) BASLAT.bat ile paneli yeniden ac. Otomatik uretim artik kategoriye uygun bir yapay zeka sahnesi
+   (yagmurlu pencere, fiyort, sahil, Samanyolu...) uretip 4K hareketli donguye cevirir.
+   Proje olustururken cozunurluk "4K" secili olsun.
+
+Sorun olursa: ai\gorsel-kurulum.log ve ai\gorsel-durum.json dosyalarini Claude okuyabilir.
