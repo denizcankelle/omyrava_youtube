@@ -1,3 +1,4 @@
+import { translationsText } from "./translations";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -258,6 +259,21 @@ export function exportPackage(db: DB, outputDir: string, projectId: string) {
     "﻿" + buildDescriptionFile({ project, meta, render, thumbnailName: thumbName }),
   );
   fs.writeFileSync(path.join(dir, "lisanslar.txt"), "﻿" + buildLicenseFile(db, projectId));
+  // Diger dillerde baslik/aciklama (YouTube "Dil ekle")
+  const dark = /🌙[^\n]*?(\d+) (?:minutes|dakika)/.exec(meta.description);
+  const tl = /(?:^|\n)((?:Tracklist|Parça listesi):\n(?:.+\n?)+?)(?:\n\n|$)/.exec(meta.description);
+  fs.writeFileSync(
+    path.join(dir, "ceviriler.txt"),
+    "\ufeff" +
+      translationsText({
+        category: project.category,
+        durationSec: project.duration_sec,
+        sourceLang: meta.language,
+        aiGenerated: Boolean(meta.ai_generated),
+        darkAfterMin: dark ? Number(dark[1]) : null,
+        tracklist: tl ? tl[1].trim() : null,
+      }),
+  );
   db.prepare(
     "UPDATE project_metadata SET package_dir = ?, packaged_at = ?, render_id = ?, thumbnail_asset_id = COALESCE(thumbnail_asset_id, ?) WHERE project_id = ?",
   ).run(dir, nowIso(), render.id, thumb?.id ?? null, projectId);

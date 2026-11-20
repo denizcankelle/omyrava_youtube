@@ -15,7 +15,8 @@ type Category =
   | "nordic"
   | "strings"
   | "ocean"
-  | "lofi";
+  | "lofi"
+  | "dark_blues";
 
 export const YT_LIMITS = {
   title: 100,
@@ -236,6 +237,27 @@ const CAT: Record<
       noun: "sıcak elektrikli piyanolu davulsuz lo-fi",
       tags: ["lofi", "davulsuz lofi", "ders çalışma müziği", "okuma müziği", "sakin lofi"],
       hashtags: ["#lofi", "#dersçalışma", "#sakinmüzik"],
+    },
+  },
+  dark_blues: {
+    en: {
+      title: "Dark Blues Instrumental",
+      noun: "slow dark blues with heavy slide guitar, deep bass and brushed drums",
+      tags: [
+        "dark blues",
+        "slow blues",
+        "instrumental blues",
+        "slide guitar",
+        "southern gothic",
+        "late night blues",
+      ],
+      hashtags: ["#darkblues", "#slowblues", "#slideguitar"],
+    },
+    tr: {
+      title: "Dark Blues Enstrümantal",
+      noun: "ağır slide gitar, derin bas ve fırçalı davulla yavaş dark blues",
+      tags: ["dark blues", "yavaş blues", "enstrümantal blues", "slide gitar", "gece müziği"],
+      hashtags: ["#darkblues", "#blues", "#slidegitar"],
     },
   },
 };

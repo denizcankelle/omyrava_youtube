@@ -3,6 +3,8 @@ import path from "node:path";
 import { getAsset } from "../lib/assets";
 import { resolveFfmpegPath, runFfmpeg } from "../lib/ffmpeg";
 import { SHORT_SEC, shortArgs, shortText } from "../lib/shorts";
+import { tracklistText, trackNames } from "../lib/tracklist";
+import { effectiveCrossfade } from "../lib/mix";
 import { findFont } from "../lib/thumbnail";
 import { aiStyleForCategory, isAiReady } from "../lib/ai";
 import { isImageAiReady } from "../lib/aiimage";
@@ -35,6 +37,14 @@ export interface AutoResult {
   visualAssetId: string;
   stillAssetId: string;
   thumbnailAssetId: string;
+  /** Bu varyasyonun metaverisi: secilirse tam renderdan once projeye uygulanir. */
+  meta?: {
+    language: "en" | "tr";
+    title: string;
+    description: string;
+    tags: string[];
+    aiGenerated: boolean;
+  };
   /** Ek kapak varyasyonlari (pakette kapak-2.jpg, kapak-3.jpg). */
   thumbVariantIds?: string[];
   previewRenderId: string;
@@ -141,7 +151,14 @@ export const autoProduce: JobHandler = async (ctx) => {
   const mix = await step<{ assetId: string }>(
     ctx,
     "audio_mix",
-    { projectId, trackIds, crossfadeSec: 20, bedId, bedDb: recipe.bed?.db ?? -14, normalize: true },
+    {
+      projectId,
+      trackIds,
+      crossfadeSec: recipe.crossfadeSec ?? 20,
+      bedId,
+      bedDb: recipe.bed?.db ?? -14,
+      normalize: true,
+    },
     { from: 0.45, to: 0.55, label: "Karışım" },
   );
 
@@ -215,6 +232,27 @@ export const autoProduce: JobHandler = async (ctx) => {
     aiGenerated: usedAi || usedAiVisual,
     variant: categoryCount(db, project.category, projectId),
   });
+  // Playlist turlerinde: parca adlari ve zaman damgali liste (YouTube bolumleri)
+  if (recipe.playlist && !usedAi) {
+    const durations = trackIds.map((id) => getAsset(db, id)?.duration_sec ?? 0);
+    const xf = effectiveCrossfade(durations, recipe.crossfadeSec ?? 20);
+    const list = tracklistText({
+      names: trackNames(
+        project.category,
+        Number(job.id.replace(/\D/g, "").slice(0, 9)) || 1,
+        durations.length,
+      ),
+      durations,
+      crossfade: xf,
+      videoSec: project.duration_sec,
+      lang,
+    });
+    if (list) {
+      const parts = d.description.split("\n\n");
+      parts.splice(1, 0, list);
+      d.description = parts.join("\n\n");
+    }
+  }
   saveMetadata(db, projectId, {
     language: lang,
     title: d.title,
@@ -267,6 +305,13 @@ export const autoProduce: JobHandler = async (ctx) => {
     thumbnailAssetId: thumb.assetId,
     thumbVariantIds,
     previewRenderId: job.id,
+    meta: {
+      language: lang,
+      title: d.title,
+      description: d.description,
+      tags: d.tags,
+      aiGenerated: usedAi || usedAiVisual,
+    },
     notes,
   };
   return result;
@@ -298,6 +343,13 @@ export const autoFinalize: JobHandler = async (ctx) => {
       "Önizlemede kullanılan dosyalar silinmiş; yeniden hazırla",
       false,
     );
+
+  // Secilen varyasyonun basligi/aciklamasi ve kapagi (varyasyonlar birbirinin uzerine yazmasin)
+  if (r.meta) {
+    const cur = getMetadata(db, projectId);
+    saveMetadata(db, projectId, { ...r.meta, playlist: cur?.playlist ?? undefined });
+  }
+  if (getAsset(db, r.thumbnailAssetId)) setThumbnail(db, projectId, r.thumbnailAssetId);
 
   await step(
     ctx,

@@ -16,6 +16,7 @@ echo Omyrava Studio baslatiliyor...
 echo Panel birazdan tarayicida acilacak: http://127.0.0.1:3000
 echo Kapatmak icin bu pencereyi kapat veya DURDUR.bat dosyasini calistir.
 echo.
-start "" cmd /c "timeout /t 10 >nul & start http://127.0.0.1:3000"
+rem Masaustu kisayolu (ACILIS.vbs) tarayiciyi kendisi acar; o zaman --sessiz ile cagrilir
+if /i not "%~1"=="--sessiz" start "" cmd /c "timeout /t 10 >nul & start http://127.0.0.1:3000"
 call npm run dev:all
 pause

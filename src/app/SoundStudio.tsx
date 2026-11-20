@@ -41,6 +41,8 @@ const MUSIC: [string, string][] = [
   ["deep_sleep", "Derin uyku ambiyansı (pad + piyano)"],
   ["felt_piano", "Keçe piyano (seyrek, melodisiz)"],
   ["lofi", "Davulsuz lo-fi"],
+  ["nordic_ritual", "İskandinav ritüel (dark folk)"],
+  ["dark_blues", "Dark blues"],
 ];
 
 const clock = (s: number | null) =>
@@ -279,6 +281,7 @@ const AI: [string, string][] = [
   ["deep_sleep", "Derin uyku ambiyansı"],
   ["cosmic", "Kozmik ambiyans"],
   ["lofi", "Davulsuz lo-fi"],
+  ["dark_blues", "Dark blues"],
 ];
 
 export function AiMusicForm({
@@ -349,6 +352,11 @@ const AI_SCENES: [string, string][] = [
   ["ocean_dusk", "Gün batımında kıyı"],
   ["milky_way", "Samanyolu ve yıldızlı gece"],
   ["cosmic", "Kozmik bulutsu"],
+  ["viking_fire", "Fiyort kıyısında Viking ateşi"],
+  ["rune_forest", "Sisli ormanda rün taşları"],
+  ["blues_bar", "Loş blues barı"],
+  ["desert_road", "Gece çöl yolu"],
+  ["rain_city_night", "Yağmurlu gece sokağı"],
 ];
 
 export function AiVisualForm({

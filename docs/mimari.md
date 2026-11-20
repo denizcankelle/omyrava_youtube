@@ -128,3 +128,24 @@ ayrı hazırlanıp birleştirilir. 10 saatlik video saatler yerine dakikalar iç
 - Migration 007 `video_stats`; `src/lib/stats.ts` özet ve öneri; `/istatistik`.
 - `src/lib/maintenance.ts`: `VACUUM INTO` yedek (14 adet), ara dosya temizliği; worker 6 saatte bir
   boşta çalıştırır; `/bakim`.
+
+## Görev 012 — referanslara göre müzik (19.11.2026)
+
+- Kullanıcı iki referans verdi: Nordic dark folk (sözsüz kadın vokali, tagelharpa, ritüel davul) ve
+  dark blues (slide gitar, gece havası). Kanallar kopyalanmaz; yalnızca tür özellikleri alınır.
+- Besteci: `nordic_ritual`, `dark_blues` stilleri; `bend` olayı (spessasynth `pitchWheel`) ile slide.
+  Blues koruları süreyi doldurur, kalan süre i akorunda vamp ile kapanır (sessizlik yok).
+- `src/lib/reverb.ts`: pembe gürültü + üstel sönüm IR, `afir` ile kuru/ıslak karışım; stil başına profil.
+- Kategori `dark_blues` (migration 008), metaveri, yapay zekâ istemleri, mastering zinciri, 5 yeni sahne.
+
+## Görev 013 — profesyonel üretim araçları (20.11.2026)
+
+- Varyasyonlar: `auto_produce` payload `batch`/`variant`; sonuç `meta` taşır, `auto_finalize` seçilen
+  varyasyonun metaverisini ve kapağını uygular. AutoSection en son partiyi kart olarak gösterir.
+- `src/lib/tracklist.ts`: parça adı bankaları, başlangıç zamanları (çapraz geçiş düşülerek),
+  YouTube bölüm koşulları; tarif `playlist: true`.
+- Sahne katmanları `flicker` (geq ile düşük çözünürlükte, döngüye tam sığan 3 frekans) ve `smoke`
+  (her yönde döşenen doku, yukarı kayar).
+- GeneralUser GS 2.0.3 (lisans: "use without restriction for your own music creation, private or
+  commercial"); `STYLE_BANK` ile stil başına seçim; KUR.bat indirir.
+- `src/lib/plan.ts` + `/plan`; `src/lib/translations.ts` + `ceviriler.txt`.

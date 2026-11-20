@@ -36,6 +36,7 @@ export const AI_STYLES = {
   deep_sleep: { label: "Derin uyku ambiyansı (yapay zekâ)" },
   cosmic: { label: "Kozmik ambiyans (yapay zekâ)" },
   lofi: { label: "Davulsuz lo-fi (yapay zekâ)" },
+  dark_blues: { label: "Dark blues (yapay zekâ)" },
 } as const;
 
 export type AiStyle = keyof typeof AI_STYLES;
@@ -46,13 +47,14 @@ const BASE = "TrackType: Music, VocalType: Instrumental.";
 const PROMPTS: Record<AiStyle, { prompts: string[]; negative: string; bpm: [number, number] }> = {
   nordic: {
     prompts: [
-      "Slow Nordic folk ambient with deep frame drums like a calm heartbeat, a droning tagelharpa, low cello and a haunting hardanger fiddle melody. Distant wordless choir and cold wind. Ancient, spiritual and peaceful Viking atmosphere.",
-      "Meditative Scandinavian folk instrumental. Soft hand drum pulse, warm bowed lyre drones, a lonely nyckelharpa melody over a misty fjord, gentle swells of strings. Calm, reverent and grounding.",
-      "Dark ambient Norse soundscape, slow and soothing. Deep drones, sparse ritual drums, a mournful fiddle and low horn in the far distance, airy choir pads. Northern lights at night, serene and timeless.",
+      "Cinematic Nordic dark folk, slow and hypnotic. A droning tagelharpa and low bowed lyre, deep frame drums like a calm heartbeat, ethereal wordless female vocalise floating above, distant horn. Ancient, spiritual and uplifting Viking atmosphere, stone hall reverb.",
+      "Ritual Scandinavian folk instrumental: steady tribal hand drums, sustained tagelharpa drone, a haunting hardanger fiddle melody answered by an airy female choir pad, soft wind. Misty fjord at dawn, epic but calm.",
+      "Meditative Norse ambient: deep drones, sparse ritual drums, a lonely nyckelharpa theme, soft harp arpeggios and wide wordless choir swells. Northern lights at night, serene and timeless.",
+      "Slow epic Viking folk: heavy but soft war drums on a slow pulse, cello and tagelharpa drones, a mournful flute and fiddle melody, wordless choir rising and falling. Reverent, cinematic, grounding.",
     ],
     negative:
-      "vocals, lyrics, singing, fast tempo, electronic beat, distorted, harsh, metal, guitar solo",
-    bpm: [56, 66],
+      "lyrics, words, rap, pop, electronic beat, synth bass, distorted guitar, metal, fast tempo, harsh, shrill",
+    bpm: [60, 72],
   },
   piano: {
     prompts: [
@@ -120,6 +122,16 @@ const PROMPTS: Record<AiStyle, { prompts: string[]; negative: string; bpm: [numb
       "drums, percussion, hi-hat, snare, kick, beat, vocals, vinyl crackle pops, harsh, distorted, fast, loud",
     bpm: [55, 65],
   },
+  dark_blues: {
+    prompts: [
+      "Instrumental dark blues, slow and hypnotic. Heavy resonator slide guitar with a gritty tone, deep upright bass, brushed drums on a slow 12/8 shuffle, smoky late-night bar, southern gothic mood.",
+      "Slow outlaw country blues instrumental: haunting slide guitar over a droning low E, steady kick and soft snare, warm organ pad far behind, dusty desert highway at midnight, stoic and cinematic.",
+      "Moody dark blues jam: clean electric guitar with tremolo and slide, walking bass, sparse ride cymbal, long sustained notes and space, melancholic and reflective, whiskey and rain.",
+    ],
+    negative:
+      "vocals, singing, lyrics, pop, edm, fast tempo, happy, bright, harsh distortion, shrill",
+    bpm: [60, 72],
+  },
 };
 
 export interface AiItem {
@@ -166,7 +178,8 @@ export function aiStyleForCategory(category: string): AiStyle | null {
     category === "piano" ||
     category === "piano_violin" ||
     category === "strings" ||
-    category === "lofi"
+    category === "lofi" ||
+    category === "dark_blues"
   )
     return category;
   if (category === "meditation" || category === "deep_sleep" || category === "cosmic")

@@ -56,6 +56,34 @@ describe("besteci", () => {
       expect(top.filter((e) => e.t >= t && e.t < t + 2).length).toBeLessThanOrEqual(2);
   });
 
+  it("dark blues: slide (perde bukme), shuffle davul, sure sonuna kadar dolu", () => {
+    const m = composeMusic("dark_blues", 3, 600);
+    const bends = m.events.filter((e) => e.type === "bend");
+    expect(bends.length).toBeGreaterThan(50);
+    for (const b of bends) if (b.type === "bend") expect(b.value).toBeGreaterThanOrEqual(0);
+    const on = m.events.filter((e) => e.type === "on");
+    expect(on.some((e) => e.ch === 9 && e.note === 36)).toBe(true);
+    // Notalar arasinda 6 sn'den uzun bosluk yok (parca sonuna kadar calar)
+    const starts = on.map((e) => e.t).sort((a, b) => a - b);
+    for (let i = 1; i < starts.length; i++) expect(starts[i] - starts[i - 1]).toBeLessThan(6);
+    expect(starts.at(-1)!).toBeGreaterThan(600 - 15);
+  });
+
+  it("iskandinav rituel: drone, kalp atisi davul, kadin vokali ve arp", () => {
+    const m = composeMusic("nordic_ritual", 8, 600);
+    const on = m.events.filter((e) => e.type === "on");
+    for (const ch of [0, 2, 4, 5])
+      expect(
+        on.some((e) => e.ch === ch),
+        `kanal ${ch}`,
+      ).toBe(true);
+    expect(m.events.find((e) => e.type === "program" && e.ch === 4)).toMatchObject({ program: 53 });
+    expect(m.events.find((e) => e.type === "program" && e.ch === 1)).toMatchObject({
+      program: 110,
+    });
+    for (const e of on) if (e.type === "on") expect(e.vel).toBeLessThanOrEqual(90);
+  });
+
   it("lo-fi: davulsuz, elektrikli piyano, 55–65 BPM", () => {
     const m = composeMusic("lofi", 9, 600);
     expect(m.tempo).toBeGreaterThanOrEqual(55);

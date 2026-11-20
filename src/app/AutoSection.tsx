@@ -13,14 +13,28 @@ interface AutoResult {
   thumbnailAssetId: string;
   previewRenderId: string;
   notes: string[];
+  meta?: { title: string };
 }
 
-function lastJob(db: DB, projectId: string, type: string): Job | undefined {
+/** En son "parti"nin hazirlik isleri (tek uretim ya da 3 varyasyon). */
+function latestBatch(db: DB, projectId: string): Job[] {
+  const jobs = db
+    .prepare(
+      "SELECT * FROM jobs WHERE project_id = ? AND type = 'auto_produce' ORDER BY created_at DESC LIMIT 12",
+    )
+    .all(projectId) as unknown as Job[];
+  if (!jobs.length) return [];
+  const batchOf = (j: Job) => (JSON.parse(j.payload) as { batch?: string }).batch ?? j.id;
+  const b = batchOf(jobs[0]);
+  return jobs.filter((j) => batchOf(j) === b).reverse();
+}
+
+function lastFinalize(db: DB, projectId: string): Job | undefined {
   return db
     .prepare(
-      "SELECT * FROM jobs WHERE project_id = ? AND type = ? ORDER BY created_at DESC LIMIT 1",
+      "SELECT * FROM jobs WHERE project_id = ? AND type = 'auto_finalize' ORDER BY created_at DESC LIMIT 1",
     )
-    .get(projectId, type) as Job | undefined;
+    .get(projectId) as Job | undefined;
 }
 
 function Progress({ job, title }: { job: Job; title: string }) {
@@ -40,115 +54,162 @@ function Progress({ job, title }: { job: Job; title: string }) {
   );
 }
 
-function StartButton({
-  projectId,
-  label,
-  ghost,
-}: {
-  projectId: string;
-  label: string;
-  ghost?: boolean;
-}) {
+function StartButtons({ projectId, again }: { projectId: string; again?: boolean }) {
   return (
-    <form action={autoProduceAction}>
-      <input type="hidden" name="projectId" value={projectId} />
-      <button type="submit" className={ghost ? "ghost" : undefined}>
-        {label}
-      </button>
+    <div className="row-actions">
+      <form action={autoProduceAction}>
+        <input type="hidden" name="projectId" value={projectId} />
+        <input type="hidden" name="variants" value="3" />
+        <button type="submit">
+          {again ? "3 yeni varyasyon hazırla" : "3 varyasyon hazırla, ben seçeyim"}
+        </button>
+      </form>
+      <form action={autoProduceAction}>
+        <input type="hidden" name="projectId" value={projectId} />
+        <button type="submit" className="ghost">
+          {again ? "Tek yeni varyasyon" : "Tek seferde hazırla"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function FinalizeForm({ project, autoJobId }: { project: Project; autoJobId: string }) {
+  const darkOff = ["lofi", "piano_violin", "strings", "dark_blues", "nordic"].includes(
+    project.category,
+  );
+  return (
+    <form action={autoFinalizeAction}>
+      <input type="hidden" name="projectId" value={project.id} />
+      <input type="hidden" name="autoJobId" value={autoJobId} />
+      <label htmlFor={`dark-${autoJobId}`}>Ekran kararması (uyku için)</label>
+      <select id={`dark-${autoJobId}`} name="darkAfterMin" defaultValue={darkOff ? "0" : "20"}>
+        <option value="0">Kapalı (görüntü hep açık)</option>
+        {[10, 15, 20, 30, 45, 60].map((m) => (
+          <option key={m} value={m}>
+            {m} dakika sonra kararsın
+          </option>
+        ))}
+      </select>
+      <button type="submit">Bunu seç: tam render + yükleme paketi</button>
     </form>
   );
 }
 
+function VariantCard({
+  db,
+  project,
+  job,
+  index,
+  total,
+  canFinalize,
+}: {
+  db: DB;
+  project: Project;
+  job: Job;
+  index: number;
+  total: number;
+  canFinalize: boolean;
+}) {
+  const title = total > 1 ? `Varyasyon ${index + 1}` : "Önizleme (2 dk)";
+  if (job.status === "queued" || job.status === "running")
+    return (
+      <div className="variant">
+        <Progress job={job} title={`${title}: hazırlanıyor`} />
+      </div>
+    );
+  if (job.status !== "succeeded" || !job.result)
+    return (
+      <div className="variant">
+        <h3>{title}</h3>
+        <p className="error">Hazırlanamadı{job.error_message ? `: ${job.error_message}` : ""}.</p>
+      </div>
+    );
+  const r = JSON.parse(job.result) as AutoResult;
+  const audio = getAsset(db, r.audioAssetId);
+  const visual = getAsset(db, r.visualAssetId);
+  return (
+    <div className="variant">
+      <h3>{title}</h3>
+      <video controls preload="metadata" src={`/api/renders/${r.previewRenderId}/file`} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="thumb" src={`/api/assets/${r.thumbnailAssetId}/file`} alt="kapak" />
+      <p>
+        <strong>{r.meta?.title ?? getMetadata(db, project.id)?.yt_title}</strong>
+      </p>
+      <p className="muted">
+        Ses: {audio?.original_name} ({formatClock(audio?.duration_sec ?? null)}) · Görüntü:{" "}
+        {visual?.original_name}
+      </p>
+      {r.notes.map((n, i) => (
+        <p key={i} className="notice">
+          {n}
+        </p>
+      ))}
+      {canFinalize && <FinalizeForm project={project} autoJobId={job.id} />}
+    </div>
+  );
+}
+
 export function AutoSection({ db, project }: { db: DB; project: Project }) {
-  const produce = lastJob(db, project.id, "auto_produce");
-  const finalize = lastJob(db, project.id, "auto_finalize");
+  const batch = latestBatch(db, project.id);
+  const finalize = lastFinalize(db, project.id);
   const active = (j?: Job) => j && (j.status === "queued" || j.status === "running");
 
-  // 1) Hic baslamadi
-  if (!produce) {
+  if (!batch.length) {
     return (
       <section className="card full auto">
         <h2>Otomatik üretim</h2>
         <p>
-          Tek tuşla: kategoriye uygun sesler (birkaç farklı varyasyon + uzun karışım), hareketli
-          görüntü, 2 dakikalık önizleme, 3 kapak ve YouTube başlığı/açıklaması hazırlanır. Yerel
-          yapay zekâ kuruluysa müzik ve 4K sahne onunla, değilse yerleşik üreticilerle yapılır.
+          Kategoriye uygun müzik, 4K hareketli sahne, 2 dakikalık önizleme, 3 kapak ve YouTube
+          başlığı/açıklaması hazırlanır. Önerilen yol: <strong>3 varyasyon</strong> üret, dinleyip
+          en iyisini seç. İnsan seçimi hem kaliteyi artırır hem YouTube&apos;un seri üretim kuralına
+          karşı en iyi korumadır.
         </p>
-        <StartButton projectId={project.id} label="Her şeyi otomatik hazırla" />
+        <StartButtons projectId={project.id} />
       </section>
     );
   }
 
-  // 2) Hazirlaniyor
-  if (active(produce)) {
-    return (
-      <section className="card full auto">
-        <h2>Otomatik üretim</h2>
-        <Progress job={produce} title="Hazırlanıyor" />
-        <p className="muted">Bu sırada sayfayı kapatabilirsin; işlem arka planda sürer.</p>
-      </section>
-    );
-  }
-
-  // 3) Hata
-  if (produce.status !== "succeeded" || !produce.result) {
-    return (
-      <section className="card full auto">
-        <h2>Otomatik üretim</h2>
-        <p className="error">
-          Hazırlık tamamlanamadı{produce.error_message ? `: ${produce.error_message}` : ""}.
-        </p>
-        <StartButton projectId={project.id} label="Yeniden dene" />
-      </section>
-    );
-  }
-
-  const r = JSON.parse(produce.result) as AutoResult;
-  const audio = getAsset(db, r.audioAssetId);
-  const visual = getAsset(db, r.visualAssetId);
-  const meta = getMetadata(db, project.id);
-  const finalizeForThis =
-    finalize && JSON.parse(finalize.payload).autoJobId === produce.id ? finalize : undefined;
-  const pub = getPublication(db, project.id);
+  const batchIds = new Set(batch.map((j) => j.id));
+  const finForBatch =
+    finalize && batchIds.has(JSON.parse(finalize.payload).autoJobId) ? finalize : undefined;
+  const chosenId = finForBatch ? (JSON.parse(finForBatch.payload).autoJobId as string) : null;
   const fin =
-    finalizeForThis?.status === "succeeded" && finalizeForThis.result
-      ? (JSON.parse(finalizeForThis.result) as { packageDir: string; video: string })
+    finForBatch?.status === "succeeded" && finForBatch.result
+      ? (JSON.parse(finForBatch.result) as { packageDir: string; video: string })
       : null;
+  const pub = getPublication(db, project.id);
+  const busy = batch.some((j) => active(j)) || active(finForBatch);
+  const visible =
+    chosenId && finForBatch?.status !== "failed" ? batch.filter((j) => j.id === chosenId) : batch;
 
   return (
     <section className="card full auto">
       <h2>Otomatik üretim</h2>
-      <div className="two">
-        <div>
-          <h3>Önizleme (2 dk)</h3>
-          <video controls preload="metadata" src={`/api/renders/${r.previewRenderId}/file`} />
-          {r.notes.map((n, i) => (
-            <p key={i} className="notice">
-              {n}
-            </p>
-          ))}
-        </div>
-        <div>
-          <h3>Kapak ve başlık</h3>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="thumb" src={`/api/assets/${r.thumbnailAssetId}/file`} alt="kapak" />
-          <p>
-            <strong>{meta?.yt_title}</strong>
-          </p>
-          <p className="muted">
-            Ses: {audio?.original_name} ({formatClock(audio?.duration_sec ?? null)}) · Görüntü:{" "}
-            {visual?.original_name}
-          </p>
-          <p className="muted">
-            Başlık, açıklama ve kapağı aşağıdaki Gelişmiş › Yayın paketi bölümünden
-            değiştirebilirsin.
-          </p>
-        </div>
+      {batch.length > 1 && !chosenId && (
+        <p className="muted">
+          Varyasyonları dinle; beğendiğinin altındaki düğmeyle tam videoyu hazırla. Seçtiğin
+          varyasyonun başlığı, açıklaması ve kapağı kullanılır.
+        </p>
+      )}
+      <div className={visible.length > 1 ? "variants" : undefined}>
+        {visible.map((j) => (
+          <VariantCard
+            key={j.id}
+            db={db}
+            project={project}
+            job={j}
+            index={batch.indexOf(j)}
+            total={batch.length}
+            canFinalize={!busy && !fin}
+          />
+        ))}
       </div>
 
       <hr />
-      {active(finalizeForThis) ? (
-        <Progress job={finalizeForThis!} title="Tam render ve paket" />
+      {active(finForBatch) ? (
+        <Progress job={finForBatch!} title="Tam render ve paket" />
       ) : fin ? (
         <div>
           <h3>Yükleme paketi hazır</h3>
@@ -158,7 +219,8 @@ export function AutoSection({ db, project }: { db: DB; project: Project }) {
           <p className="muted">
             İçinde video, <code>kapak.jpg</code> (+ deneme için <code>kapak-2.jpg</code>,{" "}
             <code>kapak-3.jpg</code>), <code>baslik-aciklama.txt</code> (yükleme kontrol listesi
-            dahil), <code>lisanslar.txt</code> ve tanıtım için <code>short.mp4</code> +{" "}
+            dahil), <code>ceviriler.txt</code> (başka dillerde başlık/açıklama),{" "}
+            <code>lisanslar.txt</code> ve tanıtım için <code>short.mp4</code> +{" "}
             <code>short-baslik.txt</code> var.
           </p>
           <ol className="steps">
@@ -175,7 +237,10 @@ export function AutoSection({ db, project }: { db: DB; project: Project }) {
                 </form>
               )}
             </li>
-            <li>YouTube Studio&apos;ya videoyu ve kapağı yükle, metinleri dosyadan kopyala.</li>
+            <li>
+              YouTube Studio&apos;ya videoyu ve kapağı yükle, metinleri dosyadan kopyala. Çevirileri
+              Studio › Altyazılar › Dil ekle bölümünden gir.
+            </li>
             <li>
               Video bağlantısını buraya kaydet:
               {["approved", "uploaded", "scheduled", "published"].includes(project.status) ? (
@@ -192,36 +257,15 @@ export function AutoSection({ db, project }: { db: DB; project: Project }) {
         </div>
       ) : (
         <div>
-          {finalizeForThis?.status === "failed" && (
-            <p className="error">Tam render başarısız: {finalizeForThis.error_message}</p>
+          {finForBatch?.status === "failed" && (
+            <p className="error">Tam render başarısız: {finForBatch.error_message}</p>
           )}
-          <p>
-            Önizleme hoşuna gittiyse tam süreli videoyu ({formatClock(project.duration_sec)}) ve
-            yükleme paketini hazırla. Beğenmediysen baştan farklı bir varyasyon üret.
-          </p>
-          <div className="row-actions">
-            <form action={autoFinalizeAction}>
-              <input type="hidden" name="projectId" value={project.id} />
-              <input type="hidden" name="autoJobId" value={produce.id} />
-              <label htmlFor="dark">Ekran kararması (uyku için)</label>
-              <select
-                id="dark"
-                name="darkAfterMin"
-                defaultValue={
-                  ["lofi", "piano_violin", "strings"].includes(project.category) ? "0" : "20"
-                }
-              >
-                <option value="0">Kapalı (görüntü hep açık)</option>
-                {[10, 15, 20, 30, 45, 60].map((m) => (
-                  <option key={m} value={m}>
-                    {m} dakika sonra kararsın
-                  </option>
-                ))}
-              </select>
-              <button type="submit">Beğendim: tam render + yükleme paketi</button>
-            </form>
-            <StartButton projectId={project.id} label="Baştan farklı üret" ghost />
-          </div>
+          {!busy && (
+            <>
+              <p className="muted">Hiçbiri olmadıysa baştan farklı varyasyonlar üret.</p>
+              <StartButtons projectId={project.id} again />
+            </>
+          )}
         </div>
       )}
     </section>

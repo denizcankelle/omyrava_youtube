@@ -16,7 +16,7 @@ import { memoryDb } from "./helpers";
 describe("projeler", () => {
   it("yeni kategoriler (ocean, lofi) veritabanina kaydedilir", () => {
     const db = memoryDb();
-    for (const category of ["ocean", "lofi"] as const) {
+    for (const category of ["ocean", "lofi", "dark_blues"] as const) {
       const p = createProject(
         db,
         createProjectSchema.parse({ title: `Yeni ${category}`, category, durationHours: 1 }),

@@ -8,8 +8,10 @@ Studio'ya yüklemeyi sen elle yaparsın.
 
 1. `KUR.bat` dosyasına çift tıkla. Node.js ve FFmpeg yoksa kurar, paketleri yükler, veritabanını hazırlar.
    "Yeni kuruldu ama göremiyor" mesajı çıkarsa pencereyi kapatıp bir kez daha çift tıkla.
-2. `BASLAT.bat` dosyasına çift tıkla. Panel tarayıcıda açılır: http://127.0.0.1:3000
-   BASLAT.bat önce açık kalmış eski panel/worker süreçlerini kapatır. Durdurmak için `DURDUR.bat`.
+2. Masaüstündeki **Omyrava Studio** simgesine çift tıkla (KUR.bat oluşturur; yoksa
+   `KISAYOL-OLUSTUR.bat`). Panel çalışıyorsa doğrudan açılır; çalışmıyorsa arka planda başlatılır
+   (görev çubuğunda küçültülmüş pencere) ve hazır olunca tarayıcıda açılır: http://127.0.0.1:3000
+   Elle başlatmak için `BASLAT.bat`; durdurmak için `DURDUR.bat`.
 
 Aşağıdaki bölümler aynı işi elle yapmak isteyenler içindir.
 
@@ -103,6 +105,34 @@ Kurulu değilse yerleşik FFmpeg görselleri kullanılır. Kurulum: `ai\GORSEL-K
   sahne bazında özet ve öneri.
 - **Bakım** (`/bakim`): günlük otomatik veritabanı yedeği (`data\yedek`, son 14) ve eski ara
   dosyaların temizliği; disk kullanımı.
+
+### Türler ve referanslar (19.11.2026)
+
+- **İskandinav (Nordic):** referans "cinematic dark folk" — tagelharpa droneu, kalp atışı çerçeve
+  davulu, sözsüz kadın vokali. Besteci stili `nordic_ritual` (drone + davul + vokal + keman cevabı +
+  arp + flüt, bölümler: giriş → davul → şarkı → doruk → çözülme) ve taş mekân yankısı. Otomatik
+  üretim 2 ritüel + 1 ambient parça karıştırır. Yapay zekâ için 4 dark-folk istemi.
+  Sahneler: fiyort kıyısında Viking ateşi, rün taşları, fiyort ve kuzey ışıkları, karlı orman.
+- **Dark Blues (yeni tür):** referans "dark blues / southern gothic" — sözsüz, ağır slide gitar
+  (perde bükmeyle kayma ve vibrato), 12/8 shuffle, 12 ölçülük minör blues, bas, fırçalı davul,
+  hammond zemin, küçük kulüp yankısı. Playlist biçimi: 10'ar dakikalık 6 parça, 4 sn geçiş.
+  Sahneler: loş blues barı, gece çöl yolu, yağmurlu gece sokağı. Karanlık ekran varsayılan kapalı.
+- Konvolüsyon reverb (`src/lib/reverb.ts`): kendi ürettiğimiz darbe yanıtlarıyla salon, taş mekân
+  ve kulüp yankısı (lisans gerektirmez).
+
+### Profesyonel üretim araçları (20.11.2026)
+
+- **3 varyasyon:** otomatik üretim 3 farklı müzik/sahne/kapak varyasyonu hazırlar; dinleyip
+  birini seçersin. Seçilenin başlığı, açıklaması ve kapağı kullanılır.
+- **Playlist biçimi** (Dark Blues, Lo-fi, İskandinav): parça adları ve açıklamada zaman damgalı
+  parça listesi; YouTube bunu bölüm (chapter) olarak gösterir.
+- **Yaşayan sahneler:** Viking ateşi ve blues barında titreyen ateş/lamba ışığı, yükselen duman.
+- **Kaliteli enstrümanlar:** İskandinav, Dark Blues, Lo-fi, yaylılar ve piyano+keman için
+  GeneralUser GS (`soundfonts\GeneralUser-GS.sf2`; ticari müzik üretimine izinli). Yoksa FluidR3_GM.
+- **Yayın planı** (`/plan`): haftada 3 video (Salı/Perşembe/Cumartesi), istatistiğe göre tür sırası;
+  tek tıkla proje + 3 varyasyon.
+- **Çeviriler:** paket klasöründe `ceviriler.txt` — İngilizce/Türkçe, Almanca, İspanyolca,
+  Portekizce başlık ve açıklama (YouTube Studio › Altyazılar › Dil ekle).
 
 ### Besteci (müzik)
 

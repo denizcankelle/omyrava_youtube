@@ -15,7 +15,8 @@ export type MasterCategory =
   | "nordic"
   | "strings"
   | "ocean"
-  | "lofi";
+  | "lofi"
+  | "dark_blues";
 
 const BASE_PRE = [
   "highpass=f=30",
@@ -37,6 +38,12 @@ const TONE: Record<MasterCategory, string[]> = {
   ocean: ["highshelf=f=6000:g=-3", "equalizer=f=2500:t=q:w=1:g=-2"],
   // Analog sicaklik: ust frekanslar yuvarlatilir
   lofi: ["highshelf=f=5000:g=-4", "lowpass=f=9500", "equalizer=f=250:t=q:w=1:g=1"],
+  // Dark blues: sicak alt-orta (gitar govdesi), sert telli tinilar hafif yuvarlatilir
+  dark_blues: [
+    "equalizer=f=180:t=q:w=1:g=1.5",
+    "equalizer=f=3200:t=q:w=1:g=-2",
+    "highshelf=f=7000:g=-2",
+  ],
   piano_violin: ["highshelf=f=5000:g=-4", "equalizer=f=3500:t=q:w=1:g=-2"],
   strings: ["highshelf=f=5000:g=-4", "equalizer=f=3500:t=q:w=1:g=-2"],
   nordic: ["highshelf=f=6000:g=-3", "equalizer=f=3500:t=q:w=1:g=-2"],
@@ -52,6 +59,8 @@ const COMPRESSOR = "acompressor=threshold=0.1:ratio=2.5:attack=50:release=800:kn
 const COMPRESSOR_FOR: Partial<Record<MasterCategory, string>> = {
   piano: "acompressor=threshold=0.045:ratio=3:attack=12:release=1500:knee=6:makeup=1",
   lofi: "acompressor=threshold=0.05:ratio=3:attack=15:release=1200:knee=6:makeup=1",
+  // Slide gitar cumleleri: tepeler toplanir ama blues'un nefesi korunur
+  dark_blues: "acompressor=threshold=0.06:ratio=2.8:attack=10:release=900:knee=6:makeup=1",
 };
 
 export function isMasterCategory(c: string): c is MasterCategory {

@@ -10,10 +10,18 @@ import {
   upsertLicense,
 } from "../lib/assets";
 import { getConfig } from "../lib/config";
-import { MUSIC_STYLES, type MusicEvent, type MusicStyle, composeMusic } from "../lib/composer";
+import {
+  GENERALUSER_FILE,
+  MUSIC_STYLES,
+  type MusicEvent,
+  type MusicStyle,
+  STYLE_BANK,
+  composeMusic,
+} from "../lib/composer";
 import { resolveFfmpegPath, runFfmpeg } from "../lib/ffmpeg";
 import { JobError, isCancelled, logJob, updateProgress } from "../lib/jobs";
 import { getProject } from "../lib/projects";
+import { REVERB_PROFILES, STYLE_REVERB, irArgs, reverbArgs } from "../lib/reverb";
 import { gainToTarget } from "../lib/synth";
 import { type JobHandler, analyzeAudioFile } from "./handlers";
 
@@ -50,6 +58,9 @@ function apply(synth: SpessaSynthProcessor, e: MusicEvent) {
       break;
     case "off":
       synth.noteOff(e.ch, e.note);
+      break;
+    case "bend":
+      synth.pitchWheel(e.ch, e.value);
       break;
   }
 }
@@ -158,7 +169,11 @@ export const musicCompose: JobHandler = async (ctx) => {
   const project = getProject(db, p.projectId);
   if (!project) throw new JobError("PROJECT_NOT_FOUND", "Proje bulunamadı", false);
   const ffmpeg = resolveFfmpegPath(ffmpegPathSetting);
-  const soundfont = ctx.soundfontPath ?? getConfig().soundfontPath;
+  const baseFont = ctx.soundfontPath ?? getConfig().soundfontPath;
+  // Stile gore daha kaliteli banka (varsa)
+  const gu = path.join(path.dirname(baseFont), GENERALUSER_FILE);
+  const soundfont = STYLE_BANK[p.style] === "generaluser" && fs.existsSync(gu) ? gu : baseFont;
+  const bankName = soundfont === gu ? "GeneralUser GS (ticari müziğe izinli)" : "FluidR3_GM (MIT)";
   const durationSec = Math.round(p.minutes * 60);
   const work = path.join(
     ctx.dataDir ?? ctx.outputDir,
@@ -168,7 +183,7 @@ export const musicCompose: JobHandler = async (ctx) => {
   fs.mkdirSync(work, { recursive: true });
   try {
     const comp = composeMusic(p.style, p.seed, durationSec);
-    logJob(db, job.id, "info", comp.description);
+    logJob(db, job.id, "info", `${comp.description} · enstrümanlar: ${bankName}`);
     const raw = path.join(work, "raw.flac");
     updateProgress(db, job.id, 0.02, "çalınıyor");
     await renderToFlac({
@@ -181,7 +196,24 @@ export const musicCompose: JobHandler = async (ctx) => {
       onProgress: (f) => updateProgress(db, job.id, 0.02 + f * 0.6, "çalınıyor"),
     });
 
-    const measured = await analyzeAudioFile(ctx, ffmpeg, raw, [0.63, 0.8]);
+    // Mekan yankisi (konvolusyon): bazi stillerde kuru SoundFont sesine gercek mekan hissi
+    let mastered = raw;
+    const rv = STYLE_REVERB[p.style];
+    if (rv) {
+      const ir = path.join(work, `ir-${rv}.wav`);
+      await runFfmpeg({ ffmpegPath: ffmpeg, args: irArgs(rv, ir) });
+      mastered = path.join(work, "reverb.flac");
+      updateProgress(db, job.id, 0.62, "mekân yankısı");
+      await runFfmpeg({
+        ffmpegPath: ffmpeg,
+        args: reverbArgs(raw, ir, mastered, rv),
+        expectedDurationSec: durationSec,
+        shouldCancel: () => isCancelled(db, job.id),
+        onProgress: (f) => updateProgress(db, job.id, 0.62 + f * 0.1, "mekân yankısı"),
+      });
+      logJob(db, job.id, "info", `Mekân yankısı: ${REVERB_PROFILES[rv].label}`);
+    }
+    const measured = await analyzeAudioFile(ctx, ffmpeg, mastered, [0.72, 0.8]);
     if (!measured.loudness) throw new JobError("MEASURE_FAILED", "Üretilen müzik ölçülemedi");
     const gain = gainToTarget(measured.loudness.input_i, measured.loudness.input_tp);
     const dir = assetDir(ctx.dataDir ?? ctx.outputDir, project.id);
@@ -190,7 +222,7 @@ export const musicCompose: JobHandler = async (ctx) => {
     updateProgress(db, job.id, 0.8, "seviye");
     await runFfmpeg({
       ffmpegPath: ffmpeg,
-      args: ["-y", "-i", raw, "-af", `volume=${gain}dB`, "-c:a", "flac", dest],
+      args: ["-y", "-i", mastered, "-af", `volume=${gain}dB`, "-c:a", "flac", dest],
       expectedDurationSec: durationSec,
       shouldCancel: () => isCancelled(db, job.id),
       onProgress: (f) => updateProgress(db, job.id, 0.8 + f * 0.1),
@@ -208,7 +240,7 @@ export const musicCompose: JobHandler = async (ctx) => {
       asset.id,
       licenseSchema.parse({
         provider: "Omyrava Studio — algoritmik beste (yapay zekâ yok)",
-        licenseType: "Kendi bestem; enstrüman sesleri FluidR3_GM SoundFont (MIT lisansı)",
+        licenseType: `Kendi bestem; enstrüman sesleri ${bankName} SoundFont`,
         notes: `Otomatik kayıt. ${comp.description}. Seed ${p.seed}.`,
         reviewed: true,
       }),

@@ -39,7 +39,7 @@ describe.skipIf(!fs.existsSync(sf))("besteci ile muzik uretimi (SoundFont + FFmp
       expect(a.duration_sec!).toBeCloseTo(45, 0);
       expect(an.loudness!.input_i).toBeGreaterThan(-20);
       expect(an.loudness!.input_tp).toBeLessThan(-1.5);
-      expect(getLicense(db, a.id)!.license_type).toMatch(/MIT/);
+      expect(getLicense(db, a.id)!.license_type).toMatch(/MIT|GeneralUser GS/);
     }
     fs.rmSync(dir, { recursive: true, force: true });
   }, 120_000);

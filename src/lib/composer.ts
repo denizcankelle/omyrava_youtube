@@ -13,6 +13,11 @@ export const MUSIC_STYLES = {
   deep_sleep: { label: "Derin uyku ambiyansı (pad + piyano)", en: "Deep Sleep Ambient" },
   felt_piano: { label: "Keçe piyano (seyrek, melodisiz)", en: "Soft Felt Piano" },
   lofi: { label: "Davulsuz lo-fi (elektrikli piyano)", en: "Drumless Lo-fi" },
+  nordic_ritual: {
+    label: "İskandinav ritüel (drone, çerçeve davulu, kadın vokali, arp)",
+    en: "Nordic Ritual Dark Folk",
+  },
+  dark_blues: { label: "Dark blues (slide gitar, shuffle)", en: "Dark Blues" },
 } as const;
 
 export type MusicStyle = keyof typeof MUSIC_STYLES;
@@ -21,7 +26,9 @@ export type MusicEvent =
   | { t: number; type: "program"; ch: number; program: number }
   | { t: number; type: "cc"; ch: number; cc: number; value: number }
   | { t: number; type: "on"; ch: number; note: number; vel: number }
-  | { t: number; type: "off"; ch: number; note: number };
+  | { t: number; type: "off"; ch: number; note: number }
+  /** Perde bukme (0..16383, 8192 = orta; varsayilan aralik +-2 yarim ton). */
+  | { t: number; type: "bend"; ch: number; value: number };
 
 // Kanal / enstruman (General MIDI program numaralari)
 const CH = {
@@ -144,14 +151,51 @@ const SPECS: Record<MusicStyle, StyleSpec> = {
     roots: [0, 2, 3, 5, 7, 10],
     barsPerChord: [1],
   },
+  nordic_ritual: {
+    tempo: [60, 68],
+    modes: ["dorian", "aeolian"],
+    roots: [2, 4, 9, 7],
+    barsPerChord: [2],
+  },
+  dark_blues: { tempo: [58, 68], modes: ["aeolian"], roots: [4, 9, 2, 7], barsPerChord: [1] },
 };
 
 /** Stile ozel enstruman degisiklikleri (GM program). */
 const PROGRAM_OVERRIDE: Partial<Record<MusicStyle, Record<number, number>>> = {
   // Elektrikli piyano (Rhodes) + parmakla calinan bas
   lofi: { 0: 4, 6: 33 },
+  // Arp, hardanger tarzi keman (Fiddle), cello+kontrbas drone, kadin "ooo" vokali, flut
+  nordic_ritual: { 0: 46, 1: 110, 4: 53, 7: 73 },
+  // Ritim: celik akustik; solo: temiz elektro (slide); bas: parmak; pad: hammond org
+  dark_blues: { 0: 25, 1: 27, 6: 33, 8: 16 },
 };
-const REVERB: Partial<Record<MusicStyle, number>> = { piano: 85, felt_piano: 118, lofi: 72 };
+const REVERB: Partial<Record<MusicStyle, number>> = {
+  piano: 85,
+  felt_piano: 118,
+  lofi: 72,
+  // Bu stillerde mekan yankisini asil olarak konvolusyon reverb verir (music.ts)
+  nordic: 70,
+  nordic_ritual: 64,
+  dark_blues: 48,
+};
+/**
+ * Daha kaliteli enstruman bankasi (GeneralUser GS, ticari muzik uretimine izinli): bu stillerde
+ * kullanilir; dosya yoksa FluidR3_GM'e donulur.
+ */
+export const GENERALUSER_FILE = "GeneralUser-GS.sf2";
+export const STYLE_BANK: Partial<Record<MusicStyle, "generaluser">> = {
+  nordic: "generaluser",
+  nordic_ritual: "generaluser",
+  dark_blues: "generaluser",
+  lofi: "generaluser",
+  strings: "generaluser",
+  piano_violin: "generaluser",
+};
+
+const VOLUME_OVERRIDE: Partial<Record<MusicStyle, Record<number, number>>> = {
+  nordic_ritual: { 0: 70, 1: 78, 2: 96, 4: 92, 5: 82, 6: 88, 7: 60, 8: 66 },
+  dark_blues: { 0: 72, 1: 100, 6: 92, 8: 44 },
+};
 
 class Key {
   constructor(
@@ -185,7 +229,7 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
   for (const [chs, program] of Object.entries(PROGRAM)) {
     const ch = Number(chs);
     events.push({ t: 0, type: "program", ch, program: PROGRAM_OVERRIDE[style]?.[ch] ?? program });
-    events.push({ t: 0, type: "cc", ch, cc: 7, value: VOLUME[ch] });
+    events.push({ t: 0, type: "cc", ch, cc: 7, value: VOLUME_OVERRIDE[style]?.[ch] ?? VOLUME[ch] });
     events.push({ t: 0, type: "cc", ch, cc: 10, value: PAN[ch] });
     events.push({ t: 0, type: "cc", ch, cc: 91, value: REVERB[style] ?? 105 });
     events.push({
@@ -227,6 +271,289 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
       }
     }
   };
+
+  // --- Iskandinav rituel / dark folk: drone + kalp atisi davul + sozsuz kadin vokali ---
+  // Bolum dongusu: giris (drone) -> davul + arp -> vokal ve keman cevabi -> doruk (koro pad)
+  // -> cozulme. Her dongude tonalite bazen besli/dortlu kayar.
+  if (style === "nordic_ritual") {
+    let key = new Key(pick(spec.roots), pick(spec.modes));
+    let tt = 0.3;
+    let cycle = 0;
+    const SECTIONS: [string, number][] = [
+      ["intro", 4],
+      ["verse", 8],
+      ["song", 12],
+      ["peak", 6],
+      ["release", 6],
+    ];
+    const lowFit = (n: number, lo: number, hi: number) => {
+      while (n > hi) n -= 12;
+      while (n < lo) n += 12;
+      return n;
+    };
+    while (tt < durationSec - bar * 4) {
+      if (cycle > 0 && r() < 0.5) key = new Key((key.root + pick([5, 7])) % 12, key.mode);
+      const prog = pick(PROGRESSIONS[key.mode]);
+      let deg = prog[0];
+      let melodyDeg = 4;
+      let bi = 0;
+      for (const [sec, bars] of SECTIONS) {
+        if (tt >= durationSec - bar * 4) break;
+        const secStart = tt;
+        const secLen = bars * bar;
+        // Drone: cello kok + besli, kontrbas kok; bolum boyunca nefes alarak (swell)
+        note(
+          CH.cello,
+          lowFit(key.note(0, 36), 36, 47),
+          secStart,
+          secLen * 0.995,
+          sec === "intro" ? 52 : 64,
+          true,
+        );
+        note(
+          CH.cello,
+          lowFit(key.note(4, 36), 43, 54),
+          secStart + 0.05,
+          secLen * 0.995,
+          sec === "intro" ? 40 : 52,
+          true,
+        );
+        if (sec !== "intro")
+          note(CH.bass, lowFit(key.note(0, 24), 26, 38), secStart, secLen * 0.995, 58, true);
+        if (sec === "peak")
+          for (const d of key.triad(0))
+            note(CH.pad, key.note(d, 48), secStart, secLen * 0.99, 50, true);
+        for (let b = 0; b < bars && tt < durationSec - bar; b++, bi++) {
+          if (b % 2 === 0) deg = prog[((bi / 2) % prog.length) | 0];
+          const triad = key.triad(deg);
+          const dyn = sec === "intro" ? 0.6 : sec === "release" ? 0.7 : sec === "peak" ? 1.05 : 0.9;
+          // Davul: "lub-dub" kalp atisi; dorukta sekizlik dolgu
+          if (sec !== "intro" && !(sec === "release" && b >= bars - 2)) {
+            const low = lowFit(key.note(0, 36), 36, 47);
+            for (const k of [0, 2]) {
+              note(CH.drum, low, tt + k * beat + jitter(), beat, 56 * dyn);
+              note(CH.drum, low, tt + k * beat + beat * 0.38 + jitter(), beat * 0.5, 38 * dyn);
+            }
+            if (sec === "peak" && b % 2 === 1)
+              for (let k = 0; k < 4; k++)
+                note(CH.drum, low + 7, tt + (2 + k * 0.5) * beat, beat * 0.4, 34 + k * 4);
+          }
+          // Arp: ayrik akor notalari (verse, song)
+          if (sec === "verse" || sec === "song") {
+            const arp = [triad[0], triad[1], triad[2], triad[0] + 7].map((d) => key.note(d, 60));
+            const pattern = r() < 0.5 ? [0, 2, 1, 3, 2, 1] : [0, 1, 2, 3, 2, 1];
+            pattern.forEach((pIdx, i) => {
+              if (r() < 0.25) return;
+              note(
+                CH.piano,
+                lowFit(arp[pIdx], 55, 79),
+                tt + i * (bar / 6) + jitter(),
+                bar / 3,
+                40 * dyn,
+              );
+            });
+          }
+          // Vokal: iki olculuk uzun nota cumleleri, adim adim hareket, akor notasinda biter
+          if ((sec === "song" || sec === "peak" || (sec === "release" && b < 2)) && b % 4 < 2) {
+            if (b % 4 === 0) {
+              const lens = pick([
+                [3, 1, 4],
+                [2, 2, 4],
+                [4, 2, 2],
+                [2, 1, 1, 4],
+              ]);
+              let at = tt;
+              const phrase: number[] = [];
+              lens.forEach((len, i) => {
+                melodyDeg += pick([-1, 1, 1, -1, 0, 2, -2]);
+                if (melodyDeg > 9) melodyDeg -= 2;
+                if (melodyDeg < 2) melodyDeg += 2;
+                if (i === lens.length - 1) {
+                  const targets = key.triad(deg).flatMap((d) => [d, d + 7]);
+                  melodyDeg = [...targets].sort(
+                    (x, y) => Math.abs(x - melodyDeg) - Math.abs(y - melodyDeg),
+                  )[0];
+                }
+                const n = lowFit(key.note(melodyDeg, 60), 62, 79);
+                phrase.push(n);
+                note(CH.choir, n, at, len * beat * 0.98, (sec === "peak" ? 76 : 66) * dyn, true);
+                at += len * beat;
+              });
+              // Keman cevabi: cumlenin son iki notasi bir oktav asagida, iki olcu sonra
+              if (r() < 0.6)
+                phrase
+                  .slice(-2)
+                  .forEach((n, i) =>
+                    note(
+                      CH.violin,
+                      n - 12,
+                      tt + bar * 2 + i * beat * 2,
+                      beat * 1.95,
+                      58 * dyn,
+                      true,
+                    ),
+                  );
+            }
+          }
+          // Flut: seyrek, uzak bir cagri (song)
+          if (sec === "song" && b === 6 && r() < 0.7) {
+            const n = lowFit(key.note(pick([4, 7, 9]), 72), 72, 86);
+            note(CH.horn, n, tt + beat, bar * 1.4, 44, true);
+          }
+          tt += bar;
+        }
+      }
+      cycle++;
+    }
+    const endT = Math.min(tt, durationSec - 8);
+    if (endT > 0) {
+      note(CH.cello, lowFit(key.note(0, 36), 36, 47), endT, 7, 50, true);
+      note(CH.choir, lowFit(key.note(0, 60), 62, 74), endT + 0.5, 6, 48, true);
+    }
+    events.sort((a, b) => a.t - b.t || order(a) - order(b));
+    return {
+      events,
+      tempo,
+      description: `${MUSIC_STYLES[style].label}, ${tempo} BPM, ${cycle} döngü (${["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][key.root]} ${key.mode})`,
+    };
+  }
+
+  // --- Dark blues: 12 olculuk minor blues, 12/8 shuffle, slide solo (perde bukme ile) ---
+  if (style === "dark_blues") {
+    const root = pick(spec.roots);
+    const DR = 9; // GM vurmali kanal
+    events.push({ t: 0, type: "cc", ch: DR, cc: 7, value: 74 });
+    events.push({ t: 0, type: "cc", ch: DR, cc: 91, value: 40 });
+    events.push({ t: 0, type: "cc", ch: DR, cc: 10, value: 64 });
+    const t3 = beat / 3; // uclu bolum (shuffle)
+    const FORM = [0, 0, 0, 0, 5, 5, 0, 0, 7, 5, 0, 7]; // i i i i iv iv i i v iv i v
+    const PENT = [0, 3, 5, 6, 7, 10]; // minor pentatonik + blue note
+    const fit = (n: number, lo: number, hi: number) => {
+      while (n > hi) n -= 12;
+      while (n < lo) n += 12;
+      return n;
+    };
+    const bendTo = (ch: number, t: number, from: number, dur: number) => {
+      // from: yarim ton (negatif = alttan kayarak gel)
+      const steps = 8;
+      for (let i = 0; i <= steps; i++) {
+        const x = i / steps;
+        const semis = from * (1 - x * x * (3 - 2 * x));
+        events.push({ t: t + x * dur, type: "bend", ch, value: Math.round(8192 + semis * 4096) });
+      }
+    };
+    const vibrato = (ch: number, t: number, dur: number) => {
+      for (let x = 0.25; x < dur - 0.1; x += 0.045) {
+        const depth = Math.min(1, (x - 0.25) / 0.6) * 260;
+        events.push({
+          t: t + x,
+          type: "bend",
+          ch,
+          value: Math.round(8192 + depth * Math.sin(2 * Math.PI * 5.2 * x)),
+        });
+      }
+      events.push({ t: t + dur, type: "bend", ch, value: 8192 });
+    };
+    let tt = 0.3;
+    let chorus = 0;
+    // Giris: tek basina slide gitar, iki olcu
+    const intro = [7, 10, 12].map((iv) => fit(root + 52 + iv, 64, 79));
+    intro.forEach((n, i) => {
+      const at = tt + i * beat * 1.3;
+      bendTo(CH.violin, at - 0.01, -1, 0.18);
+      note(CH.violin, n, at, beat * 1.2, 66);
+    });
+    note(CH.violin, fit(root + 52, 64, 76), tt + beat * 4, bar * 1.2, 70);
+    vibrato(CH.violin, tt + beat * 4, bar * 1.2);
+    tt += bar * 2;
+    const chorusLen = bar * 12;
+    /** Bir koru (ya da vamp) calar: ritim, bas, org, davul ve istenirse slide solo. */
+    const playForm = (form: number[], quiet: boolean, lead: boolean) => {
+      for (let b = 0; b < form.length; b++) {
+        const c = root + form[b];
+        const dyn = quiet ? 0.75 : 1;
+        // Ritim gitar: boogie (kok-besli / kok-alti), uzun-kisa shuffle
+        for (let k = 0; k < 4; k++) {
+          const top = k % 2 === 0 ? 7 : 9;
+          const lowN = fit(c + 40, 40, 51);
+          const at = tt + k * beat;
+          note(CH.piano, lowN, at + jitter(), t3 * 2 * 0.9, 46 * dyn);
+          note(CH.piano, lowN + top, at + jitter(), t3 * 2 * 0.9, 40 * dyn);
+          note(CH.piano, lowN, at + t3 * 2 + jitter(), t3 * 0.9, 34 * dyn);
+          note(CH.piano, lowN + top, at + t3 * 2 + jitter(), t3 * 0.9, 30 * dyn);
+        }
+        // Bas: kok-besli-oktav-besli, shuffle
+        [0, 7, 12, 7].forEach((iv, k) =>
+          note(CH.bass, fit(c + 28 + iv, 28, 52), tt + k * beat, beat * 0.9, 58 * dyn),
+        );
+        // Org: akor zemini (sakin korusta da)
+        if (b === 0 || form[b] !== form[b - 1])
+          for (const iv of [0, 3, 7, 10]) {
+            const idx = form.slice(b).findIndex((x) => x !== form[b]);
+            const len = (idx === -1 ? form.length - b : idx) * bar;
+            note(CH.pad, fit(c + 52 + iv, 52, 70), tt, Math.max(bar, len) * 0.98, 40);
+          }
+        // Davul: firca hissi — kick 1-3, yumusak trampet 2-4, uclu hi-hat
+        if (!quiet) {
+          for (let k = 0; k < 4; k++) {
+            const at = tt + k * beat;
+            if (k % 2 === 0) note(DR, 36, at, 0.2, 54);
+            else note(DR, 38, at + 0.01, 0.2, 40);
+            note(DR, 42, at, 0.1, 26);
+            note(DR, 42, at + t3 * 2, 0.1, 18);
+          }
+          if (b === form.length - 1) note(DR, 51, tt + beat * 3, 0.5, 30);
+        }
+        // Slide solo: cagri olculeri (1-2, 5-6, 9-10), arada nefes
+        if (lead && b % 4 < 2) {
+          const first = b % 4 === 0;
+          const rhythm = first
+            ? pick([
+                [0, 2.5],
+                [0.66, 2],
+                [0, 1, 2],
+              ])
+            : pick([[0, 1.66], [1], [0, 2]]);
+          rhythm.forEach((pos, i) => {
+            const at = tt + pos * beat;
+            const last = i === rhythm.length - 1 && !first;
+            const deg = last ? pick([0, 7]) : pick(PENT);
+            const n = fit(c + 64 + deg, 64, 81);
+            const len = last ? bar * 1.6 : beat * (pick([0.9, 1.3, 1.6]) as number);
+            bendTo(CH.violin, at - 0.015, pick([-1, -0.5, -2]), pick([0.12, 0.18, 0.25]));
+            note(CH.violin, n, at, len, (last ? 78 : 70) * dyn);
+            if (len > beat * 1.2) vibrato(CH.violin, at, len);
+          });
+        }
+        tt += bar;
+      }
+    };
+    // Korular: sure dolana kadar; kalan sure i akorunda vamp ile doldurulur (sessizlik kalmaz)
+    while (tt + chorusLen < durationSec - bar * 2) {
+      const quiet = chorus % 4 === 3; // her 4 korusta bir sakin koru (davulsuz)
+      playForm(FORM, quiet, chorus % 2 === 1 || quiet);
+      chorus++;
+    }
+    const vampBars = Math.floor((durationSec - bar * 2 - tt) / bar);
+    if (vampBars > 0)
+      playForm(
+        Array.from({ length: vampBars }, () => 0),
+        true,
+        true,
+      );
+    // Kapanis: i akoru, gitar vibratolu kok
+    for (const iv of [0, 7, 12, 15]) note(CH.piano, fit(root + 40 + iv, 40, 60), tt, bar * 1.5, 50);
+    note(CH.bass, fit(root + 28, 28, 40), tt, bar * 1.5, 60);
+    note(CH.violin, fit(root + 64, 64, 76), tt + 0.05, bar * 1.6, 74);
+    vibrato(CH.violin, tt + 0.05, bar * 1.6);
+    note(DR, 49, tt, 2, 40);
+    events.sort((a, b) => a.t - b.t || order(a) - order(b));
+    return {
+      events,
+      tempo,
+      description: `${MUSIC_STYLES[style].label}, ${tempo} BPM, ${chorus} koru (${["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][root]} minör)`,
+    };
+  }
 
   // --- Kece piyano + yagmur icin: 4–8 sn'de bir tek nota ya da iki notali kisa motif ---
   if (style === "felt_piano") {
@@ -588,5 +915,11 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
 
 /** Ayni anda: once program/cc, sonra note-off, sonra note-on. */
 function order(e: MusicEvent) {
-  return e.type === "program" ? 0 : e.type === "cc" ? 1 : e.type === "off" ? 2 : 3;
+  return e.type === "program"
+    ? 0
+    : e.type === "cc" || e.type === "bend"
+      ? 1
+      : e.type === "off"
+        ? 2
+        : 3;
 }

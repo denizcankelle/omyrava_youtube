@@ -9,6 +9,7 @@ const CATEGORIES: [string, string][] = [
   ["piano", "Piano (keçe piyano + yağmur)"],
   ["ocean", "Ocean (dalgalar + ambient)"],
   ["lofi", "Lo-fi (davulsuz, elektrikli piyano)"],
+  ["dark_blues", "Dark Blues (slide gitar, playlist)"],
   ["meditation", "Meditation"],
   ["cosmic", "Cosmic"],
   ["piano_violin", "Piano & Violin (piyano + keman)"],

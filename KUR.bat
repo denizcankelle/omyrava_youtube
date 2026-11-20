@@ -67,6 +67,11 @@ if errorlevel 1 (
 if not exist "soundfonts\FluidR3_GM.sf2" (
   echo UYARI: soundfonts\FluidR3_GM.sf2 bulunamadi. Muzik (piyano, keman, viking) uretilemez.
 )
+if not exist "soundfonts\GeneralUser-GS.sf2" (
+  echo Kaliteli enstruman bankasi (GeneralUser GS, 32 MB) indiriliyor...
+  curl -sSL -o "soundfonts\GeneralUser-GS.sf2" "https://github.com/mrbumpy409/GeneralUser-GS/raw/main/GeneralUser-GS.sf2"
+  curl -sSL -o "soundfonts\GeneralUser-GS-LICENSE.txt" "https://github.com/mrbumpy409/GeneralUser-GS/raw/main/documentation/LICENSE.txt"
+)
 echo [5/5] Veritabani hazirlaniyor...
 call npm run migrate
 if errorlevel 1 (
@@ -74,10 +79,11 @@ if errorlevel 1 (
   goto :son
 )
 
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\kisayol.ps1"
 echo.
 echo ============================================
-echo   KURULUM TAMAM. Simdi BASLAT.bat dosyasini
-echo   cift tiklayarak paneli acabilirsin.
+echo   KURULUM TAMAM. Masaustundeki "Omyrava Studio"
+echo   simgesine cift tikla.
 echo ============================================
 goto :son
 

@@ -1,11 +1,13 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import { cancelJob, enqueueJob } from "@/lib/jobs";
 import {
   ApprovalBlockedError,
+  CATEGORIES,
   createProject,
   createProjectSchema,
   setProjectStatus,
@@ -363,7 +365,15 @@ export async function autoProduceAction(formData: FormData) {
   const projectId = String(formData.get("projectId"));
   const db = getDb();
   if (!getProject(db, projectId) || Number(activeAutoJob(projectId).n) > 0) return;
-  enqueueJob(db, { type: "auto_produce", projectId, payload: { projectId }, maxAttempts: 1 });
+  const variants = Math.min(3, Math.max(1, Number(formData.get("variants") ?? 1) || 1));
+  const batch = randomUUID();
+  for (let i = 0; i < variants; i++)
+    enqueueJob(db, {
+      type: "auto_produce",
+      projectId,
+      payload: { projectId, batch, variant: i },
+      maxAttempts: 1,
+    });
   revalidatePath(`/projects/${projectId}`);
 }
 
@@ -478,4 +488,27 @@ export async function cleanupAction(): Promise<PublishFormState> {
   const r = cleanup(getDb(), cfg.dataDir);
   revalidatePath("/bakim");
   return { ok: `Temizlendi: ${r.removed} klasör, ${(r.bytes / 1024 ** 3).toFixed(2)} GB boşaldı` };
+}
+
+export async function planCreateAction(formData: FormData) {
+  const category = String(formData.get("category"));
+  const date = String(formData.get("date"));
+  const parsed = createProjectSchema.safeParse({
+    title: `${(CATEGORIES as Record<string, string>)[category] ?? category} · ${date}`,
+    category,
+    durationHours: formData.get("hours"),
+    targetDate: date,
+  });
+  if (!parsed.success) return;
+  const db = getDb();
+  const project = createProject(db, parsed.data);
+  const batch = randomUUID();
+  for (let i = 0; i < 3; i++)
+    enqueueJob(db, {
+      type: "auto_produce",
+      projectId: project.id,
+      payload: { projectId: project.id, batch, variant: i },
+      maxAttempts: 1,
+    });
+  redirect(`/projects/${project.id}`);
 }

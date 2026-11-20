@@ -16,6 +16,7 @@ export const CATEGORIES = {
   strings: "Strings & Cello",
   ocean: "Ocean Waves",
   lofi: "Lo-fi (drumless)",
+  dark_blues: "Dark Blues",
 } as const;
 
 export const DURATION_PRESETS_HOURS = [1, 3, 8, 10] as const;

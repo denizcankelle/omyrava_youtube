@@ -9,7 +9,7 @@
 import { FPS, breathingZoom, x264For } from "./render";
 import { rng } from "./synth";
 
-export type Overlay = "rain" | "snow" | "fog" | "stars" | "water" | "none";
+export type Overlay = "rain" | "snow" | "fog" | "stars" | "water" | "flicker" | "smoke" | "none";
 
 export interface Scene {
   label: string;
@@ -119,6 +119,53 @@ export const SCENES = {
       "Gentle cosmic landscape, distant galaxy and soft nebula clouds, a calm planet horizon, deep blue and violet, serene space art",
     ],
   },
+  viking_fire: {
+    label: "Fiyort kıyısında Viking ateşi",
+    en: "Viking Fire by the Fjord",
+    overlay: "flicker",
+    overlay2: "fog",
+    prompts: [
+      "A small campfire on a rocky fjord shore at blue hour, a wooden Viking longship resting in calm water, misty mountains, soft warm firelight against cold blue tones, ancient and peaceful",
+      "Viking longhouse with glowing doorway by a misty fjord at dusk, smoke rising from the roof, snow on the ground, mountains behind, quiet and timeless",
+    ],
+  },
+  rune_forest: {
+    label: "Sisli ormanda rün taşları",
+    en: "Rune Stones in the Misty Forest",
+    overlay: "fog",
+    prompts: [
+      "Ancient carved rune stones in a misty Nordic pine forest at dawn, soft god rays through the fog, moss and ferns, mystical and calm",
+      "A circle of old standing stones on a misty hill under faint northern lights, Scandinavian wilderness, quiet and sacred atmosphere",
+    ],
+  },
+  blues_bar: {
+    label: "Loş blues barı",
+    en: "Late Night Blues Bar",
+    overlay: "flicker",
+    overlay2: "smoke",
+    prompts: [
+      "Dim smoky blues bar late at night, a vintage electric guitar on a stand on a small wooden stage, warm amber light, whiskey glass on the bar, moody shadows, cinematic",
+      "Empty old saloon at midnight, a resonator guitar leaning on a chair, single warm lamp, haze in the air, dark wood, southern gothic mood",
+    ],
+  },
+  desert_road: {
+    label: "Gece çöl yolu",
+    en: "Desert Highway at Night",
+    overlay: "stars",
+    prompts: [
+      "Lonely desert highway at night under a starry sky, an old pickup truck parked by the road, distant mountains, a dim motel sign far away, cinematic and lonely",
+      "Dusty two-lane road through the desert at blue hour, telephone poles, a full moon rising, vintage americana, moody and stoic",
+    ],
+  },
+  rain_city_night: {
+    label: "Yağmurlu gece sokağı",
+    en: "Rainy City Night",
+    overlay: "rain",
+    prompts: [
+      "Rain soaked empty city street at night seen from a dim bar window, neon reflections on wet asphalt, a lone streetlight, moody noir atmosphere",
+      "Old brick alley in the rain at midnight, warm light from a jazz club doorway, puddles reflecting signs, cinematic noir",
+    ],
+  },
 } satisfies Record<string, Scene>;
 
 export type SceneId = keyof typeof SCENES;
@@ -132,7 +179,8 @@ export const CATEGORY_SCENES: Record<string, SceneId[]> = {
   deep_sleep: ["milky_way", "misty_lake", "fjord_aurora"],
   cosmic: ["cosmic", "milky_way"],
   meditation: ["misty_lake", "ocean_dusk"],
-  nordic: ["fjord_aurora", "snow_forest", "misty_lake"],
+  nordic: ["viking_fire", "rune_forest", "fjord_aurora", "snow_forest"],
+  dark_blues: ["blues_bar", "desert_road", "rain_city_night"],
   piano_violin: ["misty_lake", "snow_forest", "fjord_aurora"],
   strings: ["fjord_aurora", "misty_lake", "snow_forest"],
 };
@@ -232,6 +280,28 @@ function fogTexture(w: number, h: number, seed: number, out: string): string[] {
   ];
 }
 
+/** Her yonde kusursuz dosenen yumusak duman dokusu (yukari kayar). */
+function smokeTexture(w: number, h: number, seed: number, out: string): string[] {
+  const sw = Math.round(w / 80);
+  const sh = Math.round(h / 45);
+  return [
+    "-y",
+    "-f",
+    "lavfi",
+    "-i",
+    noise(sw, sh, seed),
+    "-filter_complex",
+    `[0]gblur=sigma=2.5,split[a][b];[b]hflip[c];[a][c]hstack,split[d][e];[e]vflip[f];[d][f]vstack,` +
+      `scale=${w}:${h}:flags=bicubic,gblur=sigma=${Math.round(h / 50)},` +
+      `lut=y='clip((val-128)*8+70,0,255)'`,
+    "-frames:v",
+    "1",
+    "-pix_fmt",
+    "gray",
+    out,
+  ];
+}
+
 /** Ustten (gokyuzu) ya da alttan (su) yumusak gecisli maske. */
 function bandMask(w: number, h: number, where: "top" | "bottom" | "low", out: string): string[] {
   const expr =
@@ -259,7 +329,7 @@ function bandMask(w: number, h: number, where: "top" | "bottom" | "low", out: st
 interface Layer {
   /** Hazirlik komutlari (PNG dokular). */
   prep: string[][];
-  /** Girdi dosyalari (sirayla). */
+  /** Girdi dosyalari (sirayla); `lavfi:` ile baslayan girdi bir FFmpeg kaynagidir. */
   inputs: string[];
   /** Girdi etiketlerinden alfa katmani ureten filtre; {i} girdi indeksleriyle degistirilir. */
   graph: (idx: number[], out: string) => string;
@@ -377,6 +447,34 @@ function layerFor(
         opacity: water ? 0.7 : 0.5,
       };
     }
+    case "flicker": {
+      // Ates / mum isigi: alt-orta bolgede sicak bir parlama, uc farkli hizda titrer
+      // (her biri donguye tam sigan tur sayisinda). Dusuk cozunurlukte hesaplanip buyutulur.
+      const a = cyc(1.1);
+      const b = cyc(2.3);
+      const c = cyc(4.7);
+      const env =
+        `exp(-(pow(X/W-0.5,2)*3.2+pow(Y/H-0.74,2)*5))*` +
+        `(0.6+0.22*sin(2*PI*${a}*N/${frames})+0.12*sin(2*PI*${b}*N/${frames}+1.3)+0.06*sin(2*PI*${c}*N/${frames}+2.1))`;
+      return {
+        prep: [],
+        inputs: [`lavfi:color=c=black:s=192x108:r=${FPS},format=gray`],
+        graph: ([g], out) =>
+          `[${g}]geq=lum='clip(255*${env},0,255)',scale=${w}:${h}:flags=bicubic[${out}]`,
+        color: "0xffa24a",
+        opacity: 0.2,
+      };
+    }
+    case "smoke": {
+      return {
+        prep: [smokeTexture(w, h, s(1), `${n}a.png`)],
+        inputs: [`${n}a.png`],
+        graph: ([a], out) =>
+          `[${a}]format=gray,scroll=vertical=${f(cyc(1 / 60) / frames)}:horizontal=${f(cyc(1 / 60) / frames)}[${out}]`,
+        color: "0xbfb5a8",
+        opacity: 0.2,
+      };
+    }
     default:
       return null;
   }
@@ -415,7 +513,8 @@ export function buildSceneLoopPlan(
   layers.forEach((l, li) => {
     const ids: number[] = [];
     for (const inp of l.inputs) {
-      args.push("-loop", "1", "-framerate", String(FPS), "-i", inp);
+      if (inp.startsWith("lavfi:")) args.push("-f", "lavfi", "-i", inp.slice(6));
+      else args.push("-loop", "1", "-framerate", String(FPS), "-i", inp);
       ids.push(idx++);
     }
     args.push("-f", "lavfi", "-i", `color=c=${l.color}:s=${width}x${height}:r=${FPS}`);

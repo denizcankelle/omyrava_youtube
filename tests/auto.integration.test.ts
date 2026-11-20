@@ -71,6 +71,9 @@ describe("tam otomatik akis (FFmpeg ile)", () => {
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "kapak-2.jpg"))).toBe(true);
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "kapak-3.jpg"))).toBe(true);
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "short.mp4"))).toBe(true);
+    expect(fs.readFileSync(path.join(fin.r.packageDir as string, "ceviriler.txt"), "utf8")).toMatch(
+      /Deutsch/,
+    );
     expect(
       fs.readFileSync(path.join(fin.r.packageDir as string, "short-baslik.txt"), "utf8"),
     ).toMatch(/#shorts/);

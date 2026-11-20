@@ -13,11 +13,16 @@ type Category =
   | "nordic"
   | "strings"
   | "ocean"
-  | "lofi";
+  | "lofi"
+  | "dark_blues";
 
 export interface Recipe {
   /** Uretilecek ses parcalari (her biri farkli seed): sentez sesi veya besteci muzigi. */
   tracks: ({ preset: SynthPreset; minutes: number } | { music: MusicStyle; minutes: number })[];
+  /** Playlist bicimi: parca adlari + aciklamada zaman damgali liste (YouTube bolumleri). */
+  playlist?: boolean;
+  /** Parcalar arasi capraz gecis (sn); varsayilan 20. Playlist turlerinde kisa. */
+  crossfadeSec?: number;
   /** Tum sure boyunca altta calan katman. */
   bed?: { preset: SynthPreset; minutes: number; db: number };
   visual: VisualPreset;
@@ -77,8 +82,10 @@ export const RECIPES: Record<Category, Recipe> = {
     thumb: { en: "PIANO & VIOLIN", tr: "PİYANO & KEMAN" },
   },
   nordic: {
-    tracks: music("nordic", 3),
-    bed: { preset: "wind", minutes: 15, db: -20 },
+    // Iki ritüel dark-folk parcasi (drone, kalp atisi davul, sozsuz kadin vokali) + bir ambient
+    tracks: [...music("nordic_ritual", 2), ...music("nordic", 1)],
+    playlist: true,
+    bed: { preset: "wind", minutes: 15, db: -24 },
     visual: "aurora",
     metaCategory: "nordic",
     thumb: { en: "NORDIC AMBIENT", tr: "İSKANDİNAV AMBİYANS" },
@@ -99,11 +106,22 @@ export const RECIPES: Record<Category, Recipe> = {
   },
   lofi: {
     // Davulsuz lo-fi; plak dokusu tekil patlama duyulmayacak kadar geride.
-    tracks: music("lofi", 3),
+    tracks: music("lofi", 4, 12),
+    crossfadeSec: 8,
+    playlist: true,
     bed: { preset: "vinyl_hiss", minutes: 15, db: -30 },
     visual: "night_sky",
     metaCategory: "lofi",
     thumb: { en: "LO-FI NO DRUMS", tr: "DAVULSUZ LO-FI" },
+  },
+  dark_blues: {
+    // Playlist bicimi: 10'ar dakikalik 6 parca, parcalar arasi kisa gecis
+    tracks: music("dark_blues", 6, 10),
+    crossfadeSec: 4,
+    playlist: true,
+    visual: "rain_window",
+    metaCategory: "dark_blues",
+    thumb: { en: "DARK BLUES", tr: "DARK BLUES" },
   },
 };
 

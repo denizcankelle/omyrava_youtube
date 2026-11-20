@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </h1>
             <nav className="topnav">
               <Link href="/">Projeler</Link>
+              <Link href="/plan">Yayın planı</Link>
               <Link href="/istatistik">Kanal panosu</Link>
               <Link href="/bakim">Bakım</Link>
             </nav>
