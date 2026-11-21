@@ -101,4 +101,11 @@ describe("besteci", () => {
     const p = composeMusic("piano", 1, 300).events.filter((e) => e.type === "on");
     expect(p.every((e) => e.ch === 0)).toBe(true);
   });
+  it("romantik piyano (piano_violin): keman ve yaylilar yok, melodili solo piyano", () => {
+    const n = composeMusic("piano_violin", 5, 300).events.filter((e) => e.type === "on");
+    expect(n.length).toBeGreaterThan(200);
+    expect(n.every((e) => e.ch === 0)).toBe(true);
+    // melodi: orta-ust oktavda notalar var
+    expect(n.some((e) => e.type === "on" && e.note >= 64)).toBe(true);
+  });
 });

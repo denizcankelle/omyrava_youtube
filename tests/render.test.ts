@@ -85,3 +85,43 @@ describe("render plani", () => {
     expect(est / 1024 ** 3).toBeLessThan(11);
   });
 });
+
+describe("video kodlayici", () => {
+  it("nvenc ve x264 argumanlari", async () => {
+    const { x264For } = await import("../src/lib/render");
+    const nv = x264For(2160, "nvenc");
+    expect(nv).toContain("h264_nvenc");
+    expect(nv[nv.indexOf("-cq") + 1]).toBe("24");
+    expect(nv).toContain("+faststart");
+    const x = x264For(1080, "x264");
+    expect(x).toContain("libx264");
+    expect(x).not.toContain("h264_nvenc");
+  });
+  it("dosyanin kodlayicisini tanir; nvenc yoksa x264 secilir", async () => {
+    const { execFileSync } = await import("node:child_process");
+    const fs = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const { chooseEncoder, fileEncoder } = await import("../src/lib/encoder");
+    const { getVideoEncoder, setVideoEncoder } = await import("../src/lib/render");
+    const ff = process.env.FFMPEG_PATH || "ffmpeg";
+    const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "omy-enc-")), "a.mp4");
+    execFileSync(ff, [
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-y",
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=black:s=320x180:d=1",
+      "-c:v",
+      "libx264",
+      f,
+    ]);
+    expect(fileEncoder(f)).toBe("x264");
+    expect(chooseEncoder(ff, "x264")).toBe("x264");
+    expect(getVideoEncoder()).toBe("x264");
+    setVideoEncoder("x264");
+  });
+});

@@ -12,9 +12,8 @@ const CATEGORIES: [string, string][] = [
   ["dark_blues", "Dark Blues (slide gitar, playlist)"],
   ["meditation", "Meditation"],
   ["cosmic", "Cosmic"],
-  ["piano_violin", "Piano & Violin (piyano + keman)"],
+  ["piano_violin", "Romantic Piano (solo piyano, melodili)"],
   ["nordic", "Nordic / Viking (İskandinav)"],
-  ["strings", "Strings & Cello (yaylılar)"],
 ];
 
 export function CreateProjectForm() {

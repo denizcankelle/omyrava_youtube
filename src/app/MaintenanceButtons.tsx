@@ -1,7 +1,19 @@
 "use client";
 
 import { useActionState } from "react";
-import { type PublishFormState, backupAction, cleanupAction } from "./actions";
+import { type PublishFormState, backupAction, cleanupAction, purgeUploadedAction } from "./actions";
+
+export function PurgeButton({ disabled }: { disabled: boolean }) {
+  const [p, purge, pp] = useActionState<PublishFormState>(purgeUploadedAction, {});
+  return (
+    <form action={purge}>
+      <button type="submit" className="ghost" disabled={pp || disabled}>
+        {pp ? "Siliniyor..." : "Yüklenmiş videoların büyük dosyalarını sil"}
+      </button>
+      {p.ok && <p className="ok-text">{p.ok}</p>}
+    </form>
+  );
+}
 
 export function MaintenanceButtons() {
   const [b, backup, pb] = useActionState<PublishFormState>(backupAction, {});

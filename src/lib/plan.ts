@@ -16,6 +16,7 @@ const ROTATION: Category[] = [
   "dark_blues",
   "piano",
   "ocean",
+  "piano_violin",
   "lofi",
 ];
 const UPLOAD_DAYS = [2, 4, 6]; // Sali, Persembe, Cumartesi

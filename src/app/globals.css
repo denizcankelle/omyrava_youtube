@@ -406,3 +406,20 @@ nav.topnav a:hover {
 .variant img.thumb {
   width: 100%;
 }
+
+.checklist ul {
+  list-style: none;
+  padding-left: 0;
+}
+.checklist li {
+  padding: 3px 0;
+}
+.checklist li.ok {
+  color: #6fd39a;
+}
+.checklist li.warn {
+  color: #e6c069;
+}
+.checklist li.bad {
+  color: #f07a7a;
+}

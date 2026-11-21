@@ -27,6 +27,8 @@ import {
   recordUpload,
   saveMetadata,
 } from "../src/lib/publish";
+import { uploadChecklist } from "../src/lib/checklist";
+import { purgeUploaded } from "../src/lib/maintenance";
 import { handlers } from "../src/worker/handlers";
 import { memoryDb } from "./helpers";
 
@@ -129,6 +131,10 @@ describe("yayin paketi uctan uca (FFmpeg ile)", () => {
     );
     expect(fs.existsSync(path.join(pkg.dir, "kapak.jpg"))).toBe(true);
 
+    const checks = uploadChecklist(db, p.id, audio.id);
+    expect(checks.length).toBeGreaterThan(5);
+    expect(checks.find((c) => c.label.startsWith("Tam video"))!.ok).toBe(true);
+    expect(checks.find((c) => c.label.startsWith("Süre"))!.ok).toBe(true);
     expect(approvalBlockers(db, p.id)).toEqual([]);
     setProjectStatus(db, p.id, "approved");
     expect(() => setProjectStatus(db, p.id, "uploaded")).toThrow(ApprovalBlockedError);
@@ -147,6 +153,20 @@ describe("yayin paketi uctan uca (FFmpeg ile)", () => {
     expect(getPublication(db, p.id)!.status).toBe("published");
     expect(getProject(db, p.id)!.status).toBe("published");
     expect(listAssets(db, p.id).length).toBe(3);
+
+    // yuklenmis videonun buyuk dosyalari: once deneme, sonra gercek silme
+    expect(purgeUploaded(db, { olderThanDays: 3 }).projects).toEqual([]);
+    const dry = purgeUploaded(db, { dryRun: true });
+    expect(dry.projects.map((x) => x.id)).toEqual([p.id]);
+    expect(dry.bytes).toBeGreaterThan(0);
+    expect(fs.existsSync(audio.file_path)).toBe(true);
+    const real = purgeUploaded(db);
+    expect(real.bytes).toBe(dry.bytes);
+    expect(fs.existsSync(audio.file_path)).toBe(false);
+    expect(getAsset(db, audio.id)).toBeUndefined();
+    expect(getAsset(db, thumb.id)).toBeDefined();
+    expect(fs.existsSync(path.join(pkg.dir, "kapak.jpg"))).toBe(true);
+    expect(purgeUploaded(db).projects).toEqual([]);
     fs.rmSync(dir, { recursive: true, force: true });
   }, 180_000);
 });

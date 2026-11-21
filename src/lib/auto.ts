@@ -79,7 +79,7 @@ export const RECIPES: Record<Category, Recipe> = {
     tracks: music("piano_violin", 3),
     visual: "mist",
     metaCategory: "piano_violin",
-    thumb: { en: "PIANO & VIOLIN", tr: "PİYANO & KEMAN" },
+    thumb: { en: "ROMANTIC PIANO", tr: "ROMANTİK PİYANO" },
   },
   nordic: {
     // Iki ritüel dark-folk parcasi (drone, kalp atisi davul, sozsuz kadin vokali) + bir ambient

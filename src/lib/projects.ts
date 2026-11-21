@@ -11,7 +11,7 @@ export const CATEGORIES = {
   meditation: "Meditation",
   cosmic: "Cosmic",
   piano: "Piano",
-  piano_violin: "Piano & Violin",
+  piano_violin: "Romantic Piano",
   nordic: "Nordic / Viking",
   strings: "Strings & Cello",
   ocean: "Ocean Waves",
@@ -19,11 +19,16 @@ export const CATEGORIES = {
   dark_blues: "Dark Blues",
 } as const;
 
+/** Kullanimdan kalkan turler: eski projeler acilir ama yenisi olusturulamaz. */
+export const RETIRED_CATEGORIES: readonly string[] = ["strings"];
+
 export const DURATION_PRESETS_HOURS = [1, 3, 8, 10] as const;
 
 export const createProjectSchema = z.object({
   title: z.string().trim().min(3, "Başlık en az 3 karakter olmalı").max(100),
-  category: z.enum(Object.keys(CATEGORIES) as [keyof typeof CATEGORIES]),
+  category: z
+    .enum(Object.keys(CATEGORIES) as [keyof typeof CATEGORIES])
+    .refine((c) => !RETIRED_CATEGORIES.includes(c), "Bu tür kullanımdan kaldırıldı"),
   durationHours: z.coerce.number().refine((v) => [1, 3, 8, 10].includes(v), "Geçersiz süre"),
   resolution: z.enum(["1080p", "4k"]).default("1080p"),
   targetDate: z.string().trim().optional().or(z.literal("")),

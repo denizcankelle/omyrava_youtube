@@ -251,6 +251,18 @@ output/          hazır videolar (otomatik oluşur)
 | `POST /api/projects/:id/sample-render` | Örnek render işini kuyruğa al |
 | `GET  /api/jobs/:id`                   | İş durumu ve logları          |
 
+## Hız ve disk
+
+- **Ekran kartıyla render:** NVIDIA ekran kartı varsa worker açılışta bunu otomatik dener ve
+  videoları `h264_nvenc` ile kodlar (4K render birkaç kat hızlanır). Hangi kodlayıcının
+  kullanıldığı **Bakım** sayfasında görünür. Zorlamak için `.env` içine `VIDEO_ENCODER=x264`
+  ya da `VIDEO_ENCODER=nvenc` yaz.
+- **Yüklenmiş videoları temizleme:** YouTube bağlantısını kaydettiğin projelerin büyük
+  dosyaları (tam video, Shorts, ses/görüntü) **Bakım** sayfasından tek düğmeyle silinir;
+  kapak ve metinler kalır. Otomatik için `.env` içine `AUTO_PURGE_DAYS=7` yaz.
+- **Yükleme kontrol listesi:** Paket hazır olunca proje sayfasında süre, çözünürlük, ses
+  seviyesi, bölümler, yapay zekâ beyanı, kapak boyutu ve paket dosyaları otomatik kontrol edilir.
+
 ## Notlar
 
 - Veritabanı `data\omyrava.db` dosyasıdır; düzenli yedeğini al.

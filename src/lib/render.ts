@@ -35,12 +35,59 @@ export function dims(resolution: string | undefined | null): { w: number; h: num
   return resolution === "4k" ? { w: 3840, h: 2160 } : { w: WIDTH, h: HEIGHT };
 }
 
+/** Video kodlayici: islemci (libx264) ya da NVIDIA ekran karti (h264_nvenc, 5-10 kat hizli). */
+export type VideoEncoder = "x264" | "nvenc";
+let ENCODER: VideoEncoder = "x264";
+/** Worker baslarken ekran kartini dener ve secer (encoder.ts). */
+export function setVideoEncoder(e: VideoEncoder) {
+  ENCODER = e;
+}
+export function getVideoEncoder(): VideoEncoder {
+  return ENCODER;
+}
+
 /**
- * x264 ayarlari. B-kare yok ve sabit GOP: dongu sinirlarinda kopyalama sorunsuz olsun.
+ * Kodlama ayarlari. B-kare yok ve sabit GOP: dongu sinirlarinda kopyalama sorunsuz olsun.
  * 4K'da tavan bit hizi yuksek ama sinirli: 10 saatlik video diski doldurmasin.
  */
-export function x264For(height: number): string[] {
+export function x264For(height: number, enc: VideoEncoder = ENCODER): string[] {
   const uhd = height >= 2000;
+  if (enc === "nvenc")
+    return [
+      "-c:v",
+      "h264_nvenc",
+      "-preset",
+      "p6",
+      "-tune",
+      "hq",
+      "-profile:v",
+      "high",
+      "-rc",
+      "vbr",
+      "-cq",
+      uhd ? "24" : "21",
+      "-b:v",
+      "0",
+      "-maxrate",
+      uhd ? "14M" : "8M",
+      "-bufsize",
+      uhd ? "28M" : "16M",
+      "-bf",
+      "0",
+      "-g",
+      String(FPS * 2),
+      "-no-scenecut",
+      "1",
+      "-forced-idr",
+      "1",
+      "-r",
+      String(FPS),
+      "-pix_fmt",
+      "yuv420p",
+      "-an",
+      "-movflags",
+      "+faststart",
+    ];
   return [
     "-c:v",
     "libx264",
@@ -343,7 +390,12 @@ export function darkPlan(
 }
 
 /** Dongunun basindan DARK_FADE_SEC saniyelik, siyaha kararan parca (dongu ile ayni kodlama). */
-export function fadeToBlackArgs(loop: string, output: string, h: number): string[] {
+export function fadeToBlackArgs(
+  loop: string,
+  output: string,
+  h: number,
+  enc: VideoEncoder = ENCODER,
+): string[] {
   return [
     "-y",
     "-i",
@@ -352,13 +404,18 @@ export function fadeToBlackArgs(loop: string, output: string, h: number): string
     String(DARK_FADE_SEC),
     "-vf",
     `fade=t=out:st=0:d=${DARK_FADE_SEC},setsar=1,format=yuv420p`,
-    ...x264For(h),
+    ...x264For(h, enc),
     output,
   ];
 }
 
 /** 60 sn siyah parca (dongu ile ayni kodlama). */
-export function blackArgs(output: string, w: number, h: number): string[] {
+export function blackArgs(
+  output: string,
+  w: number,
+  h: number,
+  enc: VideoEncoder = ENCODER,
+): string[] {
   return [
     "-y",
     "-f",
@@ -369,7 +426,7 @@ export function blackArgs(output: string, w: number, h: number): string[] {
     String(BLACK_SEC),
     "-vf",
     "setsar=1,format=yuv420p",
-    ...x264For(h),
+    ...x264For(h, enc),
     output,
   ];
 }

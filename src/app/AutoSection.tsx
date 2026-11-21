@@ -4,6 +4,7 @@ import type { Job } from "@/lib/jobs";
 import type { Project } from "@/lib/projects";
 import { getMetadata, getPublication } from "@/lib/publish";
 import { STATUS_LABELS } from "@/lib/status";
+import { type CheckItem, uploadChecklist } from "@/lib/checklist";
 import { autoFinalizeAction, autoProduceAction, setStatusAction } from "./actions";
 import { RecordUploadForm } from "./PublishForms";
 
@@ -35,6 +36,25 @@ function lastFinalize(db: DB, projectId: string): Job | undefined {
       "SELECT * FROM jobs WHERE project_id = ? AND type = 'auto_finalize' ORDER BY created_at DESC LIMIT 1",
     )
     .get(projectId) as Job | undefined;
+}
+
+function Checklist({ items }: { items: CheckItem[] }) {
+  const allOk = items.every((i) => i.ok);
+  return (
+    <div className="checklist">
+      <p>
+        <strong>{allOk ? "✅ Yüklemeye hazır" : "⚠️ Yüklemeden önce kontrol et"}</strong>
+      </p>
+      <ul>
+        {items.map((i) => (
+          <li key={i.label} className={i.ok ? (i.warn ? "warn" : "ok") : i.warn ? "warn" : "bad"}>
+            {i.ok ? "✔" : i.warn ? "!" : "✘"} {i.label}
+            {i.detail && <span className="muted"> — {i.detail}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function Progress({ job, title }: { job: Job; title: string }) {
@@ -213,6 +233,16 @@ export function AutoSection({ db, project }: { db: DB; project: Project }) {
       ) : fin ? (
         <div>
           <h3>Yükleme paketi hazır</h3>
+          <Checklist
+            items={uploadChecklist(
+              db,
+              project.id,
+              chosenId
+                ? (JSON.parse(batch.find((j) => j.id === chosenId)?.result ?? "{}") as AutoResult)
+                    .audioAssetId
+                : undefined,
+            )}
+          />
           <p>
             Klasör: <code>{fin.packageDir}</code>
           </p>

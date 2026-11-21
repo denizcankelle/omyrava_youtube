@@ -30,7 +30,7 @@ export function isAiReady(aiDir: string, aiPython: string): boolean {
 export const AI_STYLES = {
   nordic: { label: "İskandinav / Viking (yapay zekâ)" },
   piano: { label: "Solo piyano (yapay zekâ)" },
-  piano_violin: { label: "Piyano ve keman (yapay zekâ)" },
+  piano_violin: { label: "Romantik piyano (yapay zekâ)" },
   strings: { label: "Yaylılar ve çello (yapay zekâ)" },
   meditation: { label: "Meditasyon ambiyansı (yapay zekâ)" },
   deep_sleep: { label: "Derin uyku ambiyansı (yapay zekâ)" },
@@ -68,11 +68,12 @@ const PROMPTS: Record<AiStyle, { prompts: string[]; negative: string; bpm: [numb
   },
   piano_violin: {
     prompts: [
-      "Neo-classical duet for piano and solo violin. Soft piano arpeggios and a gentle legato violin melody, warm hall reverb. Emotional, tender and soothing.",
-      "Slow romantic piano and violin piece, the violin sings a long lyrical line while the piano plays quiet chords. Peaceful, heartfelt and calming.",
-      "Cinematic but intimate piano with solo violin and a soft string pad, slow tempo, hopeful and healing atmosphere, very gentle dynamics.",
+      "Romantic neo-classical solo piano. Flowing soft arpeggios in the left hand and a tender singing melody in the right, warm grand piano, gentle sustain pedal, intimate hall reverb. Emotional, calm and soothing.",
+      "Slow lyrical solo piano ballad, a heartfelt melody over quiet broken chords, warm and close, very gentle dynamics, peaceful evening mood.",
+      "Cinematic but intimate solo grand piano, slow tempo, hopeful and healing atmosphere, soft touch, long resonant notes.",
     ],
-    negative: "drums, percussion, vocals, electronic, fast, loud, harsh, distorted",
+    negative:
+      "violin, strings, cello, orchestra, drums, percussion, vocals, electronic, fast, loud, bright, harsh, distorted",
     bpm: [58, 68],
   },
   strings: {

@@ -36,8 +36,7 @@ const PRESETS: [string, string][] = [
 const MUSIC: [string, string][] = [
   ["nordic", "İskandinav / Viking ambient"],
   ["piano", "Solo piyano"],
-  ["piano_violin", "Piyano ve keman"],
-  ["strings", "Yaylılar ve çello"],
+  ["piano_violin", "Romantik piyano (melodili)"],
   ["deep_sleep", "Derin uyku ambiyansı (pad + piyano)"],
   ["felt_piano", "Keçe piyano (seyrek, melodisiz)"],
   ["lofi", "Davulsuz lo-fi"],
@@ -275,8 +274,7 @@ export function GenerateVisualForm({ projectId }: { projectId: string }) {
 const AI: [string, string][] = [
   ["nordic", "İskandinav / Viking"],
   ["piano", "Solo piyano"],
-  ["piano_violin", "Piyano ve keman"],
-  ["strings", "Yaylılar ve çello"],
+  ["piano_violin", "Romantik piyano (melodili)"],
   ["meditation", "Meditasyon ambiyansı"],
   ["deep_sleep", "Derin uyku ambiyansı"],
   ["cosmic", "Kozmik ambiyans"],

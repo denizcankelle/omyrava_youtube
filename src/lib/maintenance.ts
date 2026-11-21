@@ -117,3 +117,53 @@ export function freeBytes(dir: string): number | null {
     return null;
   }
 }
+
+/**
+ * YouTube'a yuklenmis projelerin buyuk dosyalarini siler: tam video, onizleme, Shorts ve
+ * ses/goruntu varliklari. Kapaklar, metinler ve lisans dosyalari kalir. Gerekirse proje
+ * yeniden uretilebilir.
+ */
+export function purgeUploaded(
+  db: DB,
+  opts: { olderThanDays?: number; now?: number; dryRun?: boolean } = {},
+): { projects: { id: string; title: string; bytes: number }[]; bytes: number } {
+  const now = opts.now ?? Date.now();
+  const minAge = (opts.olderThanDays ?? 0) * 24 * HOUR;
+  const rows = db
+    .prepare(
+      `SELECT p.id, p.title, pub.created_at AS uploaded_at, m.package_dir FROM projects p
+       JOIN publications pub ON pub.project_id = p.id
+       LEFT JOIN project_metadata m ON m.project_id = p.id
+       WHERE p.status IN ('uploaded','scheduled','published') AND pub.youtube_video_id IS NOT NULL`,
+    )
+    .all() as { id: string; title: string; uploaded_at: string; package_dir: string | null }[];
+  const result: { id: string; title: string; bytes: number }[] = [];
+  let total = 0;
+  for (const r of rows) {
+    if (now - Date.parse(r.uploaded_at) < minAge) continue;
+    const files: string[] = [];
+    for (const rd of db
+      .prepare("SELECT output_path FROM renders WHERE project_id = ?")
+      .all(r.id) as { output_path: string }[])
+      if (rd.output_path && fs.existsSync(rd.output_path)) files.push(rd.output_path);
+    if (r.package_dir && fs.existsSync(path.join(r.package_dir, "short.mp4")))
+      files.push(path.join(r.package_dir, "short.mp4"));
+    const media = db
+      .prepare(
+        "SELECT id, file_path FROM assets WHERE project_id = ? AND type IN ('audio','video_loop')",
+      )
+      .all(r.id) as { id: string; file_path: string }[];
+    for (const a of media) if (fs.existsSync(a.file_path)) files.push(a.file_path);
+    let bytes = 0;
+    for (const f of files) bytes += fs.statSync(f).size;
+    if (!bytes) continue;
+    if (!opts.dryRun) {
+      for (const f of files) fs.rmSync(f, { force: true });
+      const del = db.prepare("DELETE FROM assets WHERE id = ?");
+      for (const a of media) del.run(a.id);
+    }
+    result.push({ id: r.id, title: r.title, bytes });
+    total += bytes;
+  }
+  return { projects: result, bytes: total };
+}

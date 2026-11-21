@@ -1,3 +1,5 @@
+import path from "node:path";
+import fs from "node:fs";
 import { getConfig } from "../lib/config";
 import { openDatabase } from "../lib/db";
 import {
@@ -12,7 +14,9 @@ import {
 } from "../lib/jobs";
 import { handlers } from "./handlers";
 import { writeHeartbeat } from "../lib/heartbeat";
-import { autoBackup, cleanup } from "../lib/maintenance";
+import { autoBackup, cleanup, purgeUploaded } from "../lib/maintenance";
+import { chooseEncoder } from "../lib/encoder";
+import { resolveFfmpegPath } from "../lib/ffmpeg";
 
 const once = process.argv.includes("--once");
 const cfg = getConfig();
@@ -61,6 +65,23 @@ async function main() {
   // Tek worker varsayimi: baslangicta 'running' kalan isler onceki calismadan artiktir.
   const recovered = recoverStaleJobs(db, 0);
   if (recovered) log(`${recovered} yarim kalan is tekrar kuyruga alindi`);
+  try {
+    const ff = resolveFfmpegPath(cfg.ffmpegPath);
+    const enc = chooseEncoder(ff);
+    try {
+      fs.writeFileSync(
+        path.join(cfg.dataDir, "encoder.json"),
+        JSON.stringify({ encoder: enc, at: new Date().toISOString() }),
+      );
+    } catch {
+      /* panel bilgisi; yazilamazsa onemsiz */
+    }
+    log(
+      `Video kodlayici: ${enc === "nvenc" ? "NVIDIA ekran karti (h264_nvenc)" : "islemci (libx264)"}`,
+    );
+  } catch (err) {
+    log(`Kodlayici secilemedi, islemci kullanilacak: ${(err as Error).message}`);
+  }
   log(`Hazir. Veritabani: ${cfg.dbPath} | Cikti: ${cfg.outputDir}${once ? " | --once" : ""}`);
   let lastMaintenance = 0;
 
@@ -72,6 +93,14 @@ async function main() {
       try {
         const b = autoBackup(db, cfg.dataDir);
         if (b) log(`Yedek alindi: ${b}`);
+        const days = Number(process.env.AUTO_PURGE_DAYS) || 0;
+        if (days > 0) {
+          const pr = purgeUploaded(db, { olderThanDays: days });
+          if (pr.projects.length)
+            log(
+              `Yuklenmis video dosyalari silindi: ${pr.projects.length} proje, ${(pr.bytes / 1024 ** 3).toFixed(1)} GB`,
+            );
+        }
         const c = cleanup(db, cfg.dataDir);
         if (c.removed) log(`Temizlik: ${c.removed} klasor, ${(c.bytes / 1024 ** 2).toFixed(0)} MB`);
       } catch (err) {

@@ -149,3 +149,14 @@ ayrı hazırlanıp birleştirilir. 10 saatlik video saatler yerine dakikalar iç
 - GeneralUser GS 2.0.3 (lisans: "use without restriction for your own music creation, private or
   commercial"); `STYLE_BANK` ile stil başına seçim; KUR.bat indirir.
 - `src/lib/plan.ts` + `/plan`; `src/lib/translations.ts` + `ceviriler.txt`.
+
+## Görev 014 — hız, disk ve kontrol listesi (21.11.2026)
+
+- Video kodlayıcı: worker açılışta 1 sn'lik deneme kodlamasıyla `h264_nvenc` çalışıyor mu
+  bakar (`src/lib/encoder.ts`); çalışıyorsa NVENC (p6, hq, VBR cq 21/24, 4K maxrate 14M),
+  yoksa libx264. Seçim `data/encoder.json` ile panele bildirilir. Karanlık ekran eklenirken
+  döngü dosyasının kodlayıcısı (`fileEncoder`) kullanılır ki `-c copy` birleştirme bozulmasın.
+- `purgeUploaded`: durumu uploaded/scheduled/published ve YouTube kimliği olan projelerde
+  render çıktıları, short.mp4 ve audio/video_loop varlıkları silinir; kapak, metin, lisans
+  kalır. `AUTO_PURGE_DAYS` > 0 ise worker bakım döngüsünde otomatik çalışır.
+- `uploadChecklist` (`src/lib/checklist.ts`): paket panelinde yeşil/sarı/kırmızı kontrol.

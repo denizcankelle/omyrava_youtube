@@ -5,7 +5,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { DB } from "./db";
-import { CATEGORIES } from "./projects";
+import { CATEGORIES, RETIRED_CATEGORIES } from "./projects";
 import { SCENES } from "./scene";
 import { VISUAL_PRESETS } from "./visual";
 
@@ -171,7 +171,7 @@ export function summarize(db: DB): Summary {
         `Tıklama oranı düşük (%3 altı): ${lowCtr.map((r) => r.label).join(", ")}. Pakettaki kapak-2/kapak-3 ile “Test & compare” dene.`,
       );
     const untried = Object.entries(CATEGORIES)
-      .filter(([k]) => !byCategory.some((r) => r.key === k))
+      .filter(([k]) => !RETIRED_CATEGORIES.includes(k) && !byCategory.some((r) => r.key === k))
       .map(([, l]) => l);
     if (untried.length)
       advice.push(

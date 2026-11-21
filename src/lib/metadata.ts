@@ -139,22 +139,22 @@ const CAT: Record<
   },
   piano_violin: {
     en: {
-      title: "Piano & Violin for Sleep",
-      noun: "gentle piano and violin music",
+      title: "Romantic Piano for Sleep",
+      noun: "gentle romantic solo piano music",
       tags: [
-        "piano and violin",
-        "relaxing violin",
+        "romantic piano",
+        "relaxing piano",
         "sleep piano",
-        "calm instrumental",
-        "peaceful music",
+        "calm piano music",
+        "peaceful instrumental",
       ],
-      hashtags: ["#pianoandviolin", "#relaxingmusic", "#sleepmusic"],
+      hashtags: ["#romanticpiano", "#relaxingmusic", "#sleepmusic"],
     },
     tr: {
-      title: "Uyku İçin Piyano ve Keman",
-      noun: "yumuşak piyano ve keman müziği",
-      tags: ["piyano ve keman", "rahatlatıcı keman", "uyku piyanosu", "sakin enstrümantal"],
-      hashtags: ["#piyanovekeman", "#rahatlatıcımüzik", "#uykumüziği"],
+      title: "Uyku İçin Romantik Piyano",
+      noun: "yumuşak romantik solo piyano müziği",
+      tags: ["romantik piyano", "rahatlatıcı piyano", "uyku piyanosu", "sakin piyano müziği"],
+      hashtags: ["#romantikpiyano", "#rahatlatıcımüzik", "#uykumüziği"],
     },
   },
   nordic: {

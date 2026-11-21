@@ -25,6 +25,13 @@ describe("projeler", () => {
     }
   });
 
+  it("kullanimdan kalkan tur (strings) ile yeni proje olusturulamaz", () => {
+    expect(
+      createProjectSchema.safeParse({ title: "Yaylilar", category: "strings", durationHours: 1 })
+        .success,
+    ).toBe(false);
+  });
+
   it("proje olusturur, sureyi saniyeye cevirir ve audit kaydi yazar", () => {
     const db = memoryDb();
     const input = createProjectSchema.parse({

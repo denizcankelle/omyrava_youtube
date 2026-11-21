@@ -8,8 +8,8 @@ import { rng } from "./synth";
 export const MUSIC_STYLES = {
   nordic: { label: "İskandinav / Viking ambient", en: "Nordic Viking Ambient" },
   piano: { label: "Solo piyano", en: "Soft Piano" },
-  piano_violin: { label: "Piyano ve keman", en: "Piano & Violin" },
-  strings: { label: "Yaylılar ve çello", en: "Warm Strings & Cello" },
+  piano_violin: { label: "Romantik piyano (solo)", en: "Romantic Piano" },
+  strings: { label: "Yaylılar ve çello (kullanımdan kalktı)", en: "Warm Strings & Cello" },
   deep_sleep: { label: "Derin uyku ambiyansı (pad + piyano)", en: "Deep Sleep Ambient" },
   felt_piano: { label: "Keçe piyano (seyrek, melodisiz)", en: "Soft Felt Piano" },
   lofi: { label: "Davulsuz lo-fi (elektrikli piyano)", en: "Drumless Lo-fi" },
@@ -776,7 +776,8 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
           );
         });
       }
-      if (style === "piano_violin" || style === "strings") {
+      // Romantik piyano (piano_violin): keman kaldirildi (kullanici: cok tiz); yalniz piyano
+      if (style === "strings") {
         if (chordStart) {
           const len =
             bar *
@@ -830,13 +831,13 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
 
       // --- Melodi ---
       const melodyCh =
-        style === "piano" || style === "deep_sleep"
+        style === "piano" || style === "deep_sleep" || style === "piano_violin"
           ? CH.piano
           : style === "strings"
             ? CH.cello
             : CH.violin;
       const base =
-        style === "piano"
+        style === "piano" || style === "piano_violin"
           ? 60
           : style === "strings"
             ? 48
@@ -897,12 +898,12 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
   if (endT > 0)
     for (const d of key.triad(0))
       note(
-        style === "piano" ? CH.piano : CH.strings,
+        style === "piano" || style === "piano_violin" ? CH.piano : CH.strings,
         key.note(d, 60),
         endT,
         5,
         40,
-        style !== "piano",
+        style !== "piano" && style !== "piano_violin",
       );
 
   events.sort((a, b) => a.t - b.t || order(a) - order(b));

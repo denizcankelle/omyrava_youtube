@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { getAsset } from "../lib/assets";
+import { fileEncoder } from "../lib/encoder";
 import { audit, nowIso } from "../lib/db";
 import { parseDuration, probeDurationSec, resolveFfmpegPath, runFfmpeg } from "../lib/ffmpeg";
 import { JobError, isCancelled, logJob, updateProgress } from "../lib/jobs";
@@ -253,8 +254,14 @@ export const renderVideo: JobHandler = async (ctx: HandlerContext) => {
       const tmp = `${outFile}.part.mp4`;
       if (dp) {
         // Karanlik ekran: N dongu + 8 sn kararma + siyah; hepsi ayni kodlamada, -c copy ile birlesir
-        await ff(fadeToBlackArgs(loop.file, path.join(workDir, "fade.mp4"), H), undefined, "mux");
-        await ff(blackArgs(path.join(workDir, "black.mp4"), W, H), undefined, "mux");
+        // Ek parcalar donguyle AYNI kodlayiciyla kodlanmali (aksi halde -c copy birlestirme bozulur)
+        const enc = fileEncoder(loop.file);
+        await ff(
+          fadeToBlackArgs(loop.file, path.join(workDir, "fade.mp4"), H, enc),
+          undefined,
+          "mux",
+        );
+        await ff(blackArgs(path.join(workDir, "black.mp4"), W, H, enc), undefined, "mux");
         const list = path.join(workDir, "video-list.txt");
         fs.writeFileSync(
           list,

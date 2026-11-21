@@ -31,7 +31,7 @@ import { isImageAiReady } from "@/lib/aiimage";
 import { SCENES } from "@/lib/scene";
 import { visualSchema } from "@/lib/visual";
 import { addStat, statSchema } from "@/lib/stats";
-import { backupDb, cleanup } from "@/lib/maintenance";
+import { backupDb, cleanup, purgeUploaded } from "@/lib/maintenance";
 import { mixSchema } from "@/lib/mix";
 import { metadataSchema, parseTags, suggestMetadata } from "@/lib/metadata";
 import {
@@ -511,4 +511,14 @@ export async function planCreateAction(formData: FormData) {
       maxAttempts: 1,
     });
   redirect(`/projects/${project.id}`);
+}
+
+export async function purgeUploadedAction(): Promise<PublishFormState> {
+  const r = purgeUploaded(getDb());
+  revalidatePath("/bakim");
+  return {
+    ok: r.projects.length
+      ? `${r.projects.length} yüklenmiş projenin büyük dosyaları silindi, ${(r.bytes / 1024 ** 3).toFixed(2)} GB boşaldı`
+      : "Silinecek yüklenmiş video dosyası yok",
+  };
 }
