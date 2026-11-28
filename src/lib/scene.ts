@@ -173,7 +173,8 @@ export type SceneId = keyof typeof SCENES;
 /** Kategori -> uygun sahneler (biri seed ile secilir). */
 export const CATEGORY_SCENES: Record<string, SceneId[]> = {
   rain: ["rain_room", "rain_cabin"],
-  piano: ["rain_room", "rain_cabin", "misty_lake"],
+  // Yagmur sesi olmadigi icin yagmurlu sahne de yok
+  piano: ["misty_lake", "snow_forest", "fjord_aurora"],
   lofi: ["lofi_desk", "rain_room"],
   ocean: ["ocean_moon", "ocean_dusk"],
   deep_sleep: ["milky_way", "misty_lake", "fjord_aurora"],

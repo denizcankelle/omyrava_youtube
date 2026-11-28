@@ -69,14 +69,14 @@ describe("haftalik plan", () => {
     const p0 = weeklyPlan(db, new Date("2026-11-20T10:00:00"));
     expect(p0.map((p) => new Date(`${p.date}T12:00:00`).getDay())).toEqual([6, 2, 4]);
     expect(new Set(p0.map((p) => p.category)).size).toBe(3);
-    const mk = (category: "rain" | "nordic" | "lofi", views: string, hours: string) => {
+    const mk = (category: "ocean" | "nordic" | "lofi", views: string, hours: string) => {
       const p = createProject(
         db,
         createProjectSchema.parse({ title: `T ${category}`, category, durationHours: 1 }),
       );
       addStat(db, statSchema.parse({ projectId: p.id, views, watchHours: hours }));
     };
-    mk("rain", "100", "10");
+    mk("ocean", "100", "10");
     mk("nordic", "900", "400");
     mk("lofi", "300", "60");
     const p1 = weeklyPlan(db, new Date("2026-11-20T10:00:00"));

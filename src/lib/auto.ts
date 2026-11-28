@@ -56,7 +56,6 @@ export const RECIPES: Record<Category, Recipe> = {
   },
   meditation: {
     tracks: rep("pad", 4),
-    bed: { preset: "rain_light", minutes: 15, db: -20 },
     visual: "mist",
     metaCategory: "meditation",
     thumb: { en: "MEDITATION", tr: "MEDİTASYON" },
@@ -68,12 +67,11 @@ export const RECIPES: Record<Category, Recipe> = {
     thumb: { en: "COSMIC SLEEP", tr: "KOZMİK UYKU" },
   },
   piano: {
-    // Kece piyano: 4–8 sn'de bir tek nota/iki notali motif; yagmur aradaki boslugu doldurur.
+    // Kece piyano: 4–8 sn'de bir tek nota/iki notali motif. Yagmur katmani yok (kullanici istemiyor).
     tracks: music("felt_piano", 3),
-    bed: { preset: "rain_glass", minutes: 15, db: -1 },
-    visual: "rain_window",
+    visual: "mist",
     metaCategory: "piano",
-    thumb: { en: "SOFT PIANO & RAIN", tr: "PİYANO & YAĞMUR" },
+    thumb: { en: "SOFT PIANO", tr: "YUMUŞAK PİYANO" },
   },
   piano_violin: {
     tracks: music("piano_violin", 3),

@@ -36,7 +36,7 @@ describe("projeler", () => {
     const db = memoryDb();
     const input = createProjectSchema.parse({
       title: "Gece Yagmuru",
-      category: "rain",
+      category: "ocean",
       durationHours: "8",
     });
     const p = createProject(db, input);
@@ -48,13 +48,13 @@ describe("projeler", () => {
 
   it("gecersiz girdiyi reddeder", () => {
     expect(
-      createProjectSchema.safeParse({ title: "a", category: "rain", durationHours: 8 }).success,
+      createProjectSchema.safeParse({ title: "a", category: "ocean", durationHours: 8 }).success,
     ).toBe(false);
     expect(
       createProjectSchema.safeParse({ title: "abc", category: "rock", durationHours: 8 }).success,
     ).toBe(false);
     expect(
-      createProjectSchema.safeParse({ title: "abc", category: "rain", durationHours: 5 }).success,
+      createProjectSchema.safeParse({ title: "abc", category: "ocean", durationHours: 5 }).success,
     ).toBe(false);
   });
 
@@ -118,7 +118,7 @@ describe("veritabani satirlari", () => {
     const db = memoryDb();
     const p = createProject(
       db,
-      createProjectSchema.parse({ title: "Duz", category: "rain", durationHours: 1 }),
+      createProjectSchema.parse({ title: "Duz", category: "ocean", durationHours: 1 }),
     );
     const row = db.prepare("SELECT * FROM projects WHERE id = ?").get(p.id) as object;
     expect(Object.getPrototypeOf(row)).toBe(Object.prototype);
@@ -133,7 +133,7 @@ describe("proje iptali", () => {
     const db = memoryDb();
     const p = createProject(
       db,
-      createProjectSchema.parse({ title: "İptal", category: "rain", durationHours: 1 }),
+      createProjectSchema.parse({ title: "İptal", category: "ocean", durationHours: 1 }),
     );
     const j = enqueueJob(db, {
       type: "auto_produce",

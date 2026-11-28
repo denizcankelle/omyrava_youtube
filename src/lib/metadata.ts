@@ -126,13 +126,13 @@ const CAT: Record<
   piano: {
     en: {
       title: "Soft Piano for Sleep",
-      noun: "soft felt piano with gentle rain",
+      noun: "soft, sparse felt piano",
       tags: ["sleep piano", "soft piano", "relaxing piano", "calm piano music", "piano for sleep"],
       hashtags: ["#sleeppiano", "#softpiano", "#relaxingmusic"],
     },
     tr: {
       title: "Uyku İçin Yumuşak Piyano",
-      noun: "yumuşak keçe piyano ve hafif yağmur",
+      noun: "yumuşak ve sade keçe piyano",
       tags: ["uyku piyanosu", "yumuşak piyano", "rahatlatıcı piyano", "sakin piyano müziği"],
       hashtags: ["#uykupiyanosu", "#piyano", "#rahatlatıcımüzik"],
     },

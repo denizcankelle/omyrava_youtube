@@ -110,10 +110,10 @@ describe("shorts", () => {
 describe("kanal panosu", () => {
   it("istatistik kaydi ve ozet/oneri", () => {
     const db = memoryDb();
-    const mk = (category: "rain" | "piano" | "ocean", title: string) =>
+    const mk = (category: "ocean" | "piano" | "ocean", title: string) =>
       createProject(db, createProjectSchema.parse({ title, category, durationHours: 1 }));
-    const a = mk("rain", "Yağmur 1");
-    const b = mk("rain", "Yağmur 2");
+    const a = mk("ocean", "Yağmur 1");
+    const b = mk("ocean", "Yağmur 2");
     const c = mk("piano", "Piyano 1");
     addStat(
       db,
@@ -138,8 +138,8 @@ describe("kanal panosu", () => {
     addStat(db, statSchema.parse({ projectId: c.id, views: "300", watchHours: "40", ctr: "5" }));
     const s = summarize(db);
     expect(s.totals).toEqual({ videos: 3, views: 3100, watchHours: 740 });
-    expect(s.byCategory[0]).toMatchObject({ key: "rain", videos: 2 });
-    expect(s.advice[0]).toMatch(/Rain/);
+    expect(s.byCategory[0]).toMatchObject({ key: "ocean", videos: 2 });
+    expect(s.advice[0]).toMatch(/Ocean/);
     expect(s.advice.join(" ")).toMatch(/denenmemiş/);
   });
 });

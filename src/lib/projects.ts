@@ -20,7 +20,8 @@ export const CATEGORIES = {
 } as const;
 
 /** Kullanimdan kalkan turler: eski projeler acilir ama yenisi olusturulamaz. */
-export const RETIRED_CATEGORIES: readonly string[] = ["strings"];
+// rain: kullanici yagmur sesini hic istemiyor (28.11)
+export const RETIRED_CATEGORIES: readonly string[] = ["strings", "rain"];
 
 export const DURATION_PRESETS_HOURS = [1, 3, 8, 10] as const;
 

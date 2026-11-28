@@ -12,7 +12,6 @@ export type Category = keyof typeof CATEGORIES;
 // Talep sirasi (docs/ses-kurallari.md): yagmur, piyano ve derin uyku one; Nordic ve Dark Blues
 // dinleme nisi oldugu icin dongude birer kez ve birbirinden uzak.
 const ROTATION: Category[] = [
-  "rain",
   "piano",
   "deep_sleep",
   "ocean",

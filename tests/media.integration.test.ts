@@ -71,7 +71,7 @@ describe("medya analizi ve normalizasyon (FFmpeg ile)", () => {
     const dataDir = path.join(dir, "data");
     const p = createProject(
       db,
-      createProjectSchema.parse({ title: "Medya", category: "rain", durationHours: 1 }),
+      createProjectSchema.parse({ title: "Medya", category: "ocean", durationHours: 1 }),
     );
     const audio = await importAssetFromPath(db, dataDir, { projectId: p.id, sourcePath: src });
     const image = await importAssetFromPath(db, dataDir, { projectId: p.id, sourcePath: img });

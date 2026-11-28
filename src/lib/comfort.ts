@@ -33,7 +33,7 @@ const CLASS_OF: Record<string, ComfortClass> = {
   felt_piano: "sleep",
   rain: "nature",
   ocean: "nature",
-  piano: "nature",
+  piano: "sleep",
   lofi: "listen",
   nordic: "listen",
   nordic_ritual: "listen",

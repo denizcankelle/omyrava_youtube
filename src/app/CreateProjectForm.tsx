@@ -5,8 +5,7 @@ import { createProjectAction, type FormState } from "./actions";
 
 const CATEGORIES: [string, string][] = [
   ["deep_sleep", "Deep Sleep (derin ambient)"],
-  ["rain", "Rain (hafif yağmur + ambient)"],
-  ["piano", "Piano (keçe piyano + yağmur)"],
+  ["piano", "Piano (keçe piyano, sade)"],
   ["ocean", "Ocean (dalgalar + ambient)"],
   ["lofi", "Lo-fi (davulsuz, elektrikli piyano)"],
   ["dark_blues", "Dark Blues (slide gitar, playlist)"],

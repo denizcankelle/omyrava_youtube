@@ -34,11 +34,11 @@ const TITLES: Record<string, Record<L, string>> = {
     tr: "Kozmik Uyku Müziği",
   },
   piano: {
-    de: "Sanftes Klavier & Regen",
-    es: "Piano suave y lluvia",
-    pt: "Piano suave e chuva",
-    en: "Soft Piano & Rain",
-    tr: "Yumuşak Piyano ve Yağmur",
+    de: "Sanftes Klavier zum Einschlafen",
+    es: "Piano suave para dormir",
+    pt: "Piano suave para dormir",
+    en: "Soft Piano for Sleep",
+    tr: "Uyku İçin Yumuşak Piyano",
   },
   piano_violin: {
     de: "Romantisches Klavier zum Einschlafen",

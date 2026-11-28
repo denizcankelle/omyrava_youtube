@@ -17,16 +17,14 @@ const STYLE =
   "high dynamic range, 4k wallpaper, no people, no text";
 
 export const GROUPS: Record<string, SceneId[]> = {
-  "uyku (deep sleep, rain, ocean)": [
+  "uyku (deep sleep, ocean)": [
     "milky_way",
     "misty_lake",
     "fjord_aurora",
-    "rain_room",
-    "rain_cabin",
     "ocean_moon",
     "ocean_dusk",
   ],
-  "piyano (kece, romantik)": ["rain_room", "rain_cabin", "misty_lake", "snow_forest"],
+  "piyano (kece, romantik)": ["misty_lake", "snow_forest", "fjord_aurora"],
   "nordic viking": ["viking_fire", "rune_forest", "fjord_aurora", "snow_forest"],
   "dark blues ve lofi": ["blues_bar", "desert_road", "rain_city_night", "lofi_desk"],
 };

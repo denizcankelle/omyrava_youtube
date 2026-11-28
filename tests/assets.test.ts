@@ -37,7 +37,7 @@ function setup() {
   const db = memoryDb();
   const project = createProject(
     db,
-    createProjectSchema.parse({ title: "Varlik Test", category: "rain", durationHours: 1 }),
+    createProjectSchema.parse({ title: "Varlik Test", category: "ocean", durationHours: 1 }),
   );
   return { db, project, dataDir: tmp() };
 }

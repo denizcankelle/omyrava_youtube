@@ -18,15 +18,12 @@ export interface Track {
 }
 
 const PRESETS: [string, string][] = [
-  ["rain_light", "Yağmur — hafif"],
-  ["rain_heavy", "Yağmur — yoğun"],
   ["waves", "Okyanus dalgaları"],
   ["brown_noise", "Kahverengi gürültü"],
   ["pink_noise", "Pembe gürültü"],
   ["drone", "Yumuşak drone (Cosmic)"],
   ["pad", "Yumuşak pad akorları (Meditation)"],
   ["wind", "Rüzgâr (kuzey)"],
-  ["rain_glass", "Camın arkasından ince yağmur"],
   ["waves_soft", "Uzak, küçük dalgalar"],
   ["ambient_warm", "Kadife sıcak ambient"],
   ["deep_ambient", "Derin ambient (karışan 3 ses)"],

@@ -49,7 +49,7 @@ describe("yayin paketi uctan uca (FFmpeg ile)", () => {
     const outputDir = path.join(dir, "output");
     const p = createProject(
       db,
-      createProjectSchema.parse({ title: "Yayın Test", category: "rain", durationHours: 1 }),
+      createProjectSchema.parse({ title: "Yayın Test", category: "ocean", durationHours: 1 }),
     );
     db.prepare("UPDATE projects SET duration_sec = 45 WHERE id = ?").run(p.id);
     const audio = await importAssetFromPath(db, dataDir, { projectId: p.id, sourcePath: wav });

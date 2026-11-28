@@ -20,7 +20,7 @@ describe("tam otomatik akis (FFmpeg ile)", () => {
     const db = memoryDb();
     const p = createProject(
       db,
-      createProjectSchema.parse({ title: "Otomatik Yağmur", category: "rain", durationHours: 1 }),
+      createProjectSchema.parse({ title: "Otomatik Yağmur", category: "ocean", durationHours: 1 }),
     );
     db.prepare("UPDATE projects SET duration_sec = 90 WHERE id = ?").run(p.id);
     const run = async () => {
@@ -55,7 +55,7 @@ describe("tam otomatik akis (FFmpeg ile)", () => {
     expect(preview.status).toBe("done");
     expect(preview.duration_sec).toBeGreaterThan(88);
     const meta = getMetadata(db, p.id)!;
-    expect(meta.yt_title).toContain("Rainy Night");
+    expect(meta.yt_title).toContain("Ocean");
     expect(meta.ai_generated).toBe(0);
     expect(metadataIssues(db, p.id).filter((i) => i.level === "error")).toEqual([]);
     expect(listAssets(db, p.id).length).toBeGreaterThanOrEqual(7);
