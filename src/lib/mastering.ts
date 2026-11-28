@@ -28,25 +28,31 @@ const TONE: Record<MasterCategory, string[]> = {
   // Sicak, koyu: 3-5 kHz bolgesi agresif tiraslanir
   deep_sleep: ["equalizer=f=4000:t=q:w=1:g=-6", "lowpass=f=3200:p=2"],
   // Dogal pembe gurultu: 8 kHz ustu yuvarlatilir, 250-500 Hz dengelenir
-  rain: ["highshelf=f=8000:g=-5", "equalizer=f=350:t=q:w=0.8:g=2"],
+  // "Kahverengi" karakter: 2–5 kHz hisirti ve 6 kHz ustu belirgin yumusatilir
+  rain: [
+    "equalizer=f=3200:t=o:w=1.4:g=-5",
+    "highshelf=f=6000:g=-7",
+    "equalizer=f=350:t=q:w=0.8:g=2",
+  ],
   // Ferah ama parlak olmayan orta bolge
   meditation: ["highshelf=f=4500:g=-3", "equalizer=f=1000:t=q:w=0.7:g=1"],
   cosmic: ["highshelf=f=6000:g=-3", "equalizer=f=3500:t=q:w=1:g=-2"],
   // Kece piyano tinisi: cekic/tuse parlakligi yumusatilir (yagmur altta kalir)
-  piano: ["highshelf=f=4000:g=-5", "equalizer=f=2800:t=q:w=1:g=-3", "lowpass=f=7000"],
+  piano: ["highshelf=f=4000:g=-6", "equalizer=f=3000:t=o:w=1.4:g=-5", "lowpass=f=6500"],
   // Kopuk sesi hafif: 2–4 kHz yumusatilir
-  ocean: ["highshelf=f=6000:g=-3", "equalizer=f=2500:t=q:w=1:g=-2"],
+  ocean: ["highshelf=f=6000:g=-5", "equalizer=f=3000:t=o:w=1.4:g=-3"],
   // Analog sicaklik: ust frekanslar yuvarlatilir
   lofi: ["highshelf=f=5000:g=-4", "lowpass=f=9500", "equalizer=f=250:t=q:w=1:g=1"],
   // Dark blues: sicak alt-orta (gitar govdesi), sert telli tinilar hafif yuvarlatilir
   dark_blues: [
     "equalizer=f=180:t=q:w=1:g=1.5",
-    "equalizer=f=3200:t=q:w=1:g=-2",
-    "highshelf=f=7000:g=-2",
+    "equalizer=f=3200:t=o:w=1.4:g=-3",
+    "highshelf=f=6500:g=-3",
   ],
-  piano_violin: ["highshelf=f=5000:g=-4", "equalizer=f=3500:t=q:w=1:g=-2"],
+  // Romantik piyano: cekic parlakligi yumusatilir, sicak govde
+  piano_violin: ["highshelf=f=4500:g=-5", "equalizer=f=3000:t=o:w=1.4:g=-3", "lowpass=f=8000"],
   strings: ["highshelf=f=5000:g=-4", "equalizer=f=3500:t=q:w=1:g=-2"],
-  nordic: ["highshelf=f=6000:g=-3", "equalizer=f=3500:t=q:w=1:g=-2"],
+  nordic: ["highshelf=f=6000:g=-4", "equalizer=f=3200:t=o:w=1.4:g=-3"],
 };
 
 /** Yavas, yumusak kompresor: ani tuse/perkusyon piklerini ve dinamik farki toplar. */

@@ -263,6 +263,26 @@ output/          hazır videolar (otomatik oluşur)
 - **Yükleme kontrol listesi:** Paket hazır olunca proje sayfasında süre, çözünürlük, ses
   seviyesi, bölümler, yapay zekâ beyanı, kapak boyutu ve paket dosyaları otomatik kontrol edilir.
 
+## Video arka plan görselleri
+
+`GORSEL-PAKET.bat` (önce `GORSEL-KUR.bat` ile kurulum) her tür grubu için yazısız sahneler
+üretir: `gorseller\<grup>\<sahne>-<n>-4k.png` (3840×2160) ve `-2k.jpg` (2560×1440).
+Gruplar: uyku (deep sleep, rain, ocean), piyano, nordic viking, dark blues ve lofi.
+Var olanlar atlanır; yarıda kalırsa tekrar çalıştırmak kaldığı yerden devam eder.
+
+## Çözünürlük ve kapak
+
+Yeni projeler varsayılan olarak **2K (2560×1440)** üretilir (4K ve 1080p seçilebilir).
+Yükleme paketine `kapak-yazisiz-2k.jpg` eklenir: videonun sahnesinin yazısız, 2 MB altı 2K
+hâli; YouTube'a doğrudan kapak olarak yüklenebilir. Yazılı kapaklar (`kapak.jpg`, `kapak-2/3`)
+da pakette durur.
+
+## Ses rahatlığı
+
+Her karışım ve müzik üretildikten sonra kulağı yoran iki bölge ölçülür: sertlik (2–5 kHz) ve
+tizlik (6 kHz üstü). Sınır aşılırsa ses kendiliğinden yumuşatılır; sonuç iş kaydında ve
+yükleme kontrol listesinde ("Ses rahatlık testi") görünür. Kurallar: `docs/ses-kurallari.md`.
+
 ## Notlar
 
 - Veritabanı `data\omyrava.db` dosyasıdır; düzenli yedeğini al.

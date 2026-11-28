@@ -23,7 +23,8 @@ import { JobError, isCancelled, logJob, updateProgress } from "../lib/jobs";
 import { getProject } from "../lib/projects";
 import { REVERB_PROFILES, STYLE_REVERB, irArgs, reverbArgs } from "../lib/reverb";
 import { gainToTarget } from "../lib/synth";
-import { type JobHandler, analyzeAudioFile } from "./handlers";
+import { comfortClass, comfortSummary } from "../lib/comfort";
+import { type JobHandler, analyzeAudioFile, measureComfort, solveComfort } from "./handlers";
 
 const SR = 48000;
 let bankCache: { path: string; bank: ReturnType<typeof SoundBankLoader.fromArrayBuffer> } | null =
@@ -213,6 +214,19 @@ export const musicCompose: JobHandler = async (ctx) => {
       });
       logJob(db, job.id, "info", `Mekân yankısı: ${REVERB_PROFILES[rv].label}`);
     }
+    // Rahatlik: sert/tiz bolge sinirin ustundeyse seviye olcumunden ONCE yumusatilir
+    const cls = comfortClass(p.style);
+    const { first: cm, fix } = await solveComfort(ffmpeg, mastered, cls);
+    if (cm && fix.length) {
+      logJob(db, job.id, "info", `Yumuşatılıyor: ${comfortSummary(cm)}`);
+      const soft = path.join(work, "soft.flac");
+      await runFfmpeg({
+        ffmpegPath: ffmpeg,
+        args: ["-y", "-i", mastered, "-af", fix.join(","), "-c:a", "flac", soft],
+        shouldCancel: () => isCancelled(db, job.id),
+      });
+      mastered = soft;
+    }
     const measured = await analyzeAudioFile(ctx, ffmpeg, mastered, [0.72, 0.8]);
     if (!measured.loudness) throw new JobError("MEASURE_FAILED", "Üretilen müzik ölçülemedi");
     const gain = gainToTarget(measured.loudness.input_i, measured.loudness.input_tp);
@@ -246,6 +260,8 @@ export const musicCompose: JobHandler = async (ctx) => {
       }),
     );
     const after = await analyzeAudioFile(ctx, ffmpeg, dest, [0.9, 0.99]);
+    const comfort = await measureComfort(ffmpeg, dest, cls);
+    if (comfort) after.comfort = comfort;
     updateAssetMeta(db, asset.id, { durationSec: after.durationSec, analysis: after });
     logJob(db, job.id, "info", `Hazır: ${asset.original_name}`);
     return { assetId: asset.id, gainDb: gain };

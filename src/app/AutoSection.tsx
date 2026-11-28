@@ -247,7 +247,8 @@ export function AutoSection({ db, project }: { db: DB; project: Project }) {
             Klasör: <code>{fin.packageDir}</code>
           </p>
           <p className="muted">
-            İçinde video, <code>kapak.jpg</code> (+ deneme için <code>kapak-2.jpg</code>,{" "}
+            İçinde video, <code>kapak-yazisiz-2k.jpg</code> (yazısız 2K sahne; doğrudan kapak olarak
+            yüklenebilir), <code>kapak.jpg</code> (+ deneme için <code>kapak-2.jpg</code>,{" "}
             <code>kapak-3.jpg</code>), <code>baslik-aciklama.txt</code> (yükleme kontrol listesi
             dahil), <code>ceviriler.txt</code> (başka dillerde başlık/açıklama),{" "}
             <code>lisanslar.txt</code> ve tanıtım için <code>short.mp4</code> +{" "}

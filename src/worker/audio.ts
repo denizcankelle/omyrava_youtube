@@ -17,7 +17,14 @@ import { bedArgs, effectiveCrossfade, mixSchema, sequenceArgs, sequenceDuration 
 import { getProject } from "../lib/projects";
 import { audioLoopArgs } from "../lib/render";
 import { SYNTH_PRESETS, type SynthPreset, buildSynthPlan, gainToTarget } from "../lib/synth";
-import { type HandlerContext, type JobHandler, analyzeAudioFile } from "./handlers";
+import { comfortClass, comfortSummary } from "@/lib/comfort";
+import {
+  type HandlerContext,
+  type JobHandler,
+  analyzeAudioFile,
+  measureComfort,
+  solveComfort,
+} from "./handlers";
 
 function workDirFor(ctx: HandlerContext, name: string) {
   const dir = path.join(ctx.dataDir ?? ctx.outputDir, "work", `${name}-${ctx.job.id.slice(0, 8)}`);
@@ -187,6 +194,21 @@ export const audioMix: JobHandler = async (ctx) => {
       // 1) Kategori on zinciri: EQ, stereo daraltma, yumusak kompresor
       const pre = path.join(work, "pre.flac");
       updateProgress(db, job.id, 0.56, "mastering");
+      // Rahatlik denetimi: on zincirden sonra hala sert/tiz kalan bolge otomatik yumusatilir
+      const cls = comfortClass(project.category);
+      const { first: before, fix } = await solveComfort(
+        ffmpeg,
+        current,
+        cls,
+        masterPreChain(project.category),
+      );
+      if (before)
+        logJob(
+          db,
+          job.id,
+          "info",
+          `Rahatlık ölçümü: ${comfortSummary(before)}${fix.length ? " → yumuşatılıyor" : " ✓"}`,
+        );
       await runFfmpeg({
         ffmpegPath: ffmpeg,
         args: [
@@ -194,7 +216,7 @@ export const audioMix: JobHandler = async (ctx) => {
           "-i",
           current,
           "-af",
-          masterPreChain(project.category),
+          [masterPreChain(project.category), ...fix].join(","),
           "-ar",
           "48000",
           "-c:a",
@@ -257,6 +279,11 @@ export const audioMix: JobHandler = async (ctx) => {
       }),
     );
     const after = await analyzeAudioFile(ctx, ffmpeg, dest, [0.9, 0.99]);
+    const comfort = await measureComfort(ffmpeg, dest, comfortClass(project.category));
+    if (comfort) {
+      after.comfort = comfort;
+      logJob(db, job.id, "info", `Rahatlık (son): ${comfortSummary(comfort)}`);
+    }
     updateAssetMeta(db, asset.id, { durationSec: after.durationSec, analysis: after });
     logJob(db, job.id, "info", `Hazır: ${name}`);
     return { assetId: asset.id, durationSec: after.durationSec };

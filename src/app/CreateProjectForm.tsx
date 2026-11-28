@@ -46,8 +46,9 @@ export function CreateProjectForm() {
         ))}
       </select>
       <label htmlFor="resolution">Çözünürlük</label>
-      <select id="resolution" name="resolution" defaultValue="4k">
-        <option value="4k">4K (3840×2160)</option>
+      <select id="resolution" name="resolution" defaultValue="2k">
+        <option value="2k">2K (2560×1440) — önerilen</option>
+        <option value="4k">4K (3840×2160, büyük dosya)</option>
         <option value="1080p">1080p (daha küçük dosya)</option>
       </select>
       <label htmlFor="targetDate">Hedef tarih</label>

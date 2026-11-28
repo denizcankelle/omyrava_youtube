@@ -1,3 +1,11 @@
+import {
+  type ComfortClass,
+  type ComfortResult,
+  comfortArgs,
+  comfortFix,
+  evaluateComfort,
+  parseComfort,
+} from "../lib/comfort";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -141,6 +149,50 @@ function ffmpegInfo(ffmpeg: string, file: string): Promise<string> {
     child.on("error", () => resolve(""));
     child.on("close", () => resolve(err));
   });
+}
+
+/** Rahatlik olcumu (sertlik/tizlik); `pre` verilirse o zincirden sonraki ses olculur. */
+export async function measureComfort(
+  ffmpeg: string,
+  file: string,
+  cls: ComfortClass,
+  pre?: string,
+): Promise<ComfortResult | null> {
+  try {
+    const { stderr } = await runFfmpeg({
+      ffmpegPath: ffmpeg,
+      args: comfortArgs(file, pre),
+      stderrLimit: 200_000,
+    });
+    const m = parseComfort(stderr);
+    return m ? evaluateComfort(m, cls) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Rahatlik duzeltmesi: olc, gerekiyorsa EQ ekle, tekrar olc (en fazla 3 tur). Genis bantli
+ * seslerde (yagmur) tek tur yetmeyebilir. Donen filtreler `pre` zincirinin ARDINA eklenir.
+ */
+export async function solveComfort(
+  ffmpeg: string,
+  file: string,
+  cls: ComfortClass,
+  pre?: string,
+): Promise<{ first: ComfortResult | null; fix: string[] }> {
+  const fix: string[] = [];
+  let first: ComfortResult | null = null;
+  for (let round = 0; round < 3; round++) {
+    const chain = [pre, ...fix].filter(Boolean).join(",") || undefined;
+    const m = await measureComfort(ffmpeg, file, cls, chain);
+    if (round === 0) first = m;
+    if (!m || m.ok) break;
+    const add = comfortFix(m, cls);
+    if (!add.length) break;
+    fix.push(...add);
+  }
+  return { first, fix };
 }
 
 export async function analyzeAudioFile(

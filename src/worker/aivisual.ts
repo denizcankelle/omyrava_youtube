@@ -190,7 +190,7 @@ export const aiVisual: JobHandler = async (ctx) => {
       type: "video_loop",
       parentAssetId: null,
       source: `aivisual:${scene}:${p.seed}:loop`,
-      originalName: `${label} · yapay zekâ · #${p.seed} (döngü ${h === 2160 ? "4K" : "1080p"})`,
+      originalName: `${label} · yapay zekâ · #${p.seed} (döngü ${h === 2160 ? "4K" : h === 1440 ? "2K" : "1080p"})`,
     });
     upsertLicense(db, loop.id, license);
     const dur = await probeDurationSec(ffmpeg, loopDest);

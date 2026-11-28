@@ -125,3 +125,20 @@ describe("video kodlayici", () => {
     setVideoEncoder("x264");
   });
 });
+
+describe("2K", () => {
+  it("2K boyutu, profil adi ve bit hizi", async () => {
+    const { dims, resName, x264For } = await import("../src/lib/render");
+    expect(dims("2k")).toEqual({ w: 2560, h: 1440 });
+    expect(resName("2k")).toBe("2k");
+    expect(resName(undefined)).toBe("1080p");
+    const a = x264For(1440, "x264");
+    expect(a[a.indexOf("-maxrate") + 1]).toBe("10M");
+  });
+  it("yazisiz kapak 2560x1440 ve kalite basamakli", async () => {
+    const { cleanCoverArgs } = await import("../src/lib/cover");
+    const steps = cleanCoverArgs("a.png", "b.jpg");
+    expect(steps.length).toBeGreaterThan(2);
+    expect(steps[0].join(" ")).toContain("crop=2560:1440");
+  });
+});

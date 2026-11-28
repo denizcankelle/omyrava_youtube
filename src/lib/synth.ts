@@ -261,9 +261,10 @@ export function buildSynthPlan(
     case "rain_heavy": {
       const heavy = preset === "rain_heavy";
       const P = Math.round(between(r, 31, 79));
-      const hp = heavy ? 250 : Math.round(between(r, 450, 700));
-      const lp = heavy ? 7000 : Math.round(between(r, 8000, 11000));
-      const rumble = heavy ? 0.9 : f3(between(r, 0.3, 0.6));
+      // Tiz hisirti kulagi yorar: ust sinir asagida, alt govde (ugultu) daha belirgin
+      const hp = heavy ? 220 : Math.round(between(r, 350, 500));
+      const lp = heavy ? 4800 : Math.round(between(r, 4500, 5500));
+      const rumble = heavy ? 1.0 : f3(between(r, 0.5, 0.8));
       args = [
         ...base,
         "-f",
@@ -367,7 +368,7 @@ export function buildSynthPlan(
       // Camin arkasindan: ince (alt kesik), donuk (ust kesik), cok esit; tek damla yok.
       const P = Math.round(between(r, 53, 97));
       const hp = Math.round(between(r, 380, 520));
-      const lp = Math.round(between(r, 5200, 6500));
+      const lp = Math.round(between(r, 3400, 4200));
       args = [
         ...base,
         "-f",
@@ -384,9 +385,9 @@ export function buildSynthPlan(
         `anoisesrc=c=brown:a=0.5:seed=${s(3)}:r=48000:d=${d}`,
         "-filter_complex",
         `[0][1]join=inputs=2:channel_layout=stereo,highpass=f=${hp}:p=2,lowpass=f=${lp}:p=2,` +
-          `equalizer=f=3000:t=q:w=1:g=-3[h];` +
+          `equalizer=f=3000:t=o:w=1.4:g=-5[h];` +
           `[2]lowpass=f=350,pan=stereo|c0=c0|c1=c0[l];` +
-          `[h][l]amix=inputs=2:weights=1 0.25:normalize=0,` +
+          `[h][l]amix=inputs=2:weights=1 0.4:normalize=0,` +
           `volume='0.95+0.05*sin(2*PI*t/${P})':eval=frame[o]`,
         "-map",
         "[o]",

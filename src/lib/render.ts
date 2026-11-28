@@ -32,7 +32,14 @@ const n = (x: number) => x.toFixed(3);
 
 /** Proje cozunurlugu -> piksel boyutu. */
 export function dims(resolution: string | undefined | null): { w: number; h: number } {
-  return resolution === "4k" ? { w: 3840, h: 2160 } : { w: WIDTH, h: HEIGHT };
+  if (resolution === "4k") return { w: 3840, h: 2160 };
+  if (resolution === "2k") return { w: 2560, h: 1440 };
+  return { w: WIDTH, h: HEIGHT };
+}
+
+/** Render profili/etiket icin cozunurluk adi. */
+export function resName(resolution: string | undefined | null): "1080p" | "2k" | "4k" {
+  return resolution === "4k" ? "4k" : resolution === "2k" ? "2k" : "1080p";
 }
 
 /** Video kodlayici: islemci (libx264) ya da NVIDIA ekran karti (h264_nvenc, 5-10 kat hizli). */
@@ -52,6 +59,7 @@ export function getVideoEncoder(): VideoEncoder {
  */
 export function x264For(height: number, enc: VideoEncoder = ENCODER): string[] {
   const uhd = height >= 2000;
+  const qhd = !uhd && height >= 1400;
   if (enc === "nvenc")
     return [
       "-c:v",
@@ -65,13 +73,13 @@ export function x264For(height: number, enc: VideoEncoder = ENCODER): string[] {
       "-rc",
       "vbr",
       "-cq",
-      uhd ? "24" : "21",
+      uhd ? "24" : qhd ? "22" : "21",
       "-b:v",
       "0",
       "-maxrate",
-      uhd ? "14M" : "8M",
+      uhd ? "14M" : qhd ? "10M" : "8M",
       "-bufsize",
-      uhd ? "28M" : "16M",
+      uhd ? "28M" : qhd ? "20M" : "16M",
       "-bf",
       "0",
       "-g",
@@ -94,11 +102,11 @@ export function x264For(height: number, enc: VideoEncoder = ENCODER): string[] {
     "-preset",
     "medium",
     "-crf",
-    uhd ? "23" : "20",
+    uhd ? "23" : qhd ? "21" : "20",
     "-maxrate",
-    uhd ? "14M" : "8M",
+    uhd ? "14M" : qhd ? "10M" : "8M",
     "-bufsize",
-    uhd ? "28M" : "16M",
+    uhd ? "28M" : qhd ? "20M" : "16M",
     "-bf",
     "0",
     "-g",

@@ -117,13 +117,13 @@ const SPECS: Record<MusicStyle, StyleSpec> = {
   nordic: { tempo: [54, 62], modes: ["dorian", "aeolian"], roots: [2, 4, 9, 7], barsPerChord: [2] },
   piano: {
     tempo: [58, 70],
-    modes: ["ionian", "aeolian"],
+    modes: ["ionian", "ionian", "aeolian"],
     roots: [0, 2, 4, 5, 7, 9],
     barsPerChord: [1, 2],
   },
   piano_violin: {
     tempo: [56, 66],
-    modes: ["aeolian", "ionian"],
+    modes: ["ionian", "ionian", "aeolian"],
     roots: [2, 4, 7, 9, 0],
     barsPerChord: [1, 2],
   },
@@ -135,7 +135,7 @@ const SPECS: Record<MusicStyle, StyleSpec> = {
   },
   deep_sleep: {
     tempo: [44, 52],
-    modes: ["ionian", "aeolian"],
+    modes: ["ionian", "ionian", "aeolian"],
     roots: [0, 2, 5, 7, 9],
     barsPerChord: [2],
   },
@@ -193,8 +193,8 @@ export const STYLE_BANK: Partial<Record<MusicStyle, "generaluser">> = {
 };
 
 const VOLUME_OVERRIDE: Partial<Record<MusicStyle, Record<number, number>>> = {
-  nordic_ritual: { 0: 70, 1: 78, 2: 96, 4: 92, 5: 82, 6: 88, 7: 60, 8: 66 },
-  dark_blues: { 0: 72, 1: 100, 6: 92, 8: 44 },
+  nordic_ritual: { 0: 66, 1: 66, 2: 96, 4: 84, 5: 74, 6: 88, 7: 50, 8: 66 },
+  dark_blues: { 0: 72, 1: 88, 6: 92, 8: 44 },
 };
 
 class Key {
@@ -346,7 +346,7 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
               if (r() < 0.25) return;
               note(
                 CH.piano,
-                lowFit(arp[pIdx], 55, 79),
+                lowFit(arp[pIdx], 52, 72),
                 tt + i * (bar / 6) + jitter(),
                 bar / 3,
                 40 * dyn,
@@ -374,9 +374,9 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
                     (x, y) => Math.abs(x - melodyDeg) - Math.abs(y - melodyDeg),
                   )[0];
                 }
-                const n = lowFit(key.note(melodyDeg, 60), 62, 79);
+                const n = lowFit(key.note(melodyDeg, 60), 57, 72);
                 phrase.push(n);
-                note(CH.choir, n, at, len * beat * 0.98, (sec === "peak" ? 76 : 66) * dyn, true);
+                note(CH.choir, n, at, len * beat * 0.98, (sec === "peak" ? 66 : 58) * dyn, true);
                 at += len * beat;
               });
               // Keman cevabi: cumlenin son iki notasi bir oktav asagida, iki olcu sonra
@@ -386,10 +386,10 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
                   .forEach((n, i) =>
                     note(
                       CH.violin,
-                      n - 12,
+                      lowFit(n - 12, 48, 64),
                       tt + bar * 2 + i * beat * 2,
                       beat * 1.95,
-                      58 * dyn,
+                      48 * dyn,
                       true,
                     ),
                   );
@@ -397,8 +397,8 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
           }
           // Flut: seyrek, uzak bir cagri (song)
           if (sec === "song" && b === 6 && r() < 0.7) {
-            const n = lowFit(key.note(pick([4, 7, 9]), 72), 72, 86);
-            note(CH.horn, n, tt + beat, bar * 1.4, 44, true);
+            const n = lowFit(key.note(pick([4, 7, 9]), 60), 64, 76);
+            note(CH.horn, n, tt + beat, bar * 1.4, 36, true);
           }
           tt += bar;
         }
@@ -422,7 +422,7 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
   if (style === "dark_blues") {
     const root = pick(spec.roots);
     const DR = 9; // GM vurmali kanal
-    events.push({ t: 0, type: "cc", ch: DR, cc: 7, value: 74 });
+    events.push({ t: 0, type: "cc", ch: DR, cc: 7, value: 58 });
     events.push({ t: 0, type: "cc", ch: DR, cc: 91, value: 40 });
     events.push({ t: 0, type: "cc", ch: DR, cc: 10, value: 64 });
     const t3 = beat / 3; // uclu bolum (shuffle)
@@ -444,7 +444,7 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
     };
     const vibrato = (ch: number, t: number, dur: number) => {
       for (let x = 0.25; x < dur - 0.1; x += 0.045) {
-        const depth = Math.min(1, (x - 0.25) / 0.6) * 260;
+        const depth = Math.min(1, (x - 0.25) / 0.6) * 170;
         events.push({
           t: t + x,
           type: "bend",
@@ -457,13 +457,13 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
     let tt = 0.3;
     let chorus = 0;
     // Giris: tek basina slide gitar, iki olcu
-    const intro = [7, 10, 12].map((iv) => fit(root + 52 + iv, 64, 79));
+    const intro = [7, 10, 12].map((iv) => fit(root + 52 + iv, 57, 72));
     intro.forEach((n, i) => {
       const at = tt + i * beat * 1.3;
       bendTo(CH.violin, at - 0.01, -1, 0.18);
-      note(CH.violin, n, at, beat * 1.2, 66);
+      note(CH.violin, n, at, beat * 1.2, 58);
     });
-    note(CH.violin, fit(root + 52, 64, 76), tt + beat * 4, bar * 1.2, 70);
+    note(CH.violin, fit(root + 52, 57, 69), tt + beat * 4, bar * 1.2, 62);
     vibrato(CH.violin, tt + beat * 4, bar * 1.2);
     tt += bar * 2;
     const chorusLen = bar * 12;
@@ -502,7 +502,7 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
             note(DR, 42, at, 0.1, 26);
             note(DR, 42, at + t3 * 2, 0.1, 18);
           }
-          if (b === form.length - 1) note(DR, 51, tt + beat * 3, 0.5, 30);
+          if (b === form.length - 1) note(DR, 51, tt + beat * 3, 0.5, 20);
         }
         // Slide solo: cagri olculeri (1-2, 5-6, 9-10), arada nefes
         if (lead && b % 4 < 2) {
@@ -518,10 +518,10 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
             const at = tt + pos * beat;
             const last = i === rhythm.length - 1 && !first;
             const deg = last ? pick([0, 7]) : pick(PENT);
-            const n = fit(c + 64 + deg, 64, 81);
+            const n = fit(c + 64 + deg, 57, 74);
             const len = last ? bar * 1.6 : beat * (pick([0.9, 1.3, 1.6]) as number);
             bendTo(CH.violin, at - 0.015, pick([-1, -0.5, -2]), pick([0.12, 0.18, 0.25]));
-            note(CH.violin, n, at, len, (last ? 78 : 70) * dyn);
+            note(CH.violin, n, at, len, (last ? 68 : 62) * dyn);
             if (len > beat * 1.2) vibrato(CH.violin, at, len);
           });
         }
@@ -544,9 +544,9 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
     // Kapanis: i akoru, gitar vibratolu kok
     for (const iv of [0, 7, 12, 15]) note(CH.piano, fit(root + 40 + iv, 40, 60), tt, bar * 1.5, 50);
     note(CH.bass, fit(root + 28, 28, 40), tt, bar * 1.5, 60);
-    note(CH.violin, fit(root + 64, 64, 76), tt + 0.05, bar * 1.6, 74);
+    note(CH.violin, fit(root + 64, 57, 69), tt + 0.05, bar * 1.6, 64);
     vibrato(CH.violin, tt + 0.05, bar * 1.6);
-    note(DR, 49, tt, 2, 40);
+    note(DR, 49, tt, 2, 24);
     events.sort((a, b) => a.t - b.t || order(a) - order(b));
     return {
       events,
@@ -802,10 +802,15 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
       if (style === "deep_sleep" && chordStart) {
         // Sicak pad + cok hafif koro, orta register (her hoparlorde duyulur); bas yumusak
         const len = bar * bpc;
-        for (const d of triad) note(CH.pad, key.note(d, 60), t, len * 0.99, 62 * dyn, true);
+        // Akor notalari orta perdede kalir (tiz pad/koro kulagi yorar)
+        const mid = (n: number) => {
+          while (n > 74) n -= 12;
+          return n;
+        };
+        for (const d of triad) note(CH.pad, mid(key.note(d, 60)), t, len * 0.99, 62 * dyn, true);
         if (section !== "intro")
           for (const d of triad)
-            note(CH.choir, key.note(d, 60), t + 0.3, len * 0.97, 34 * dyn, true);
+            note(CH.choir, mid(key.note(d, 60)), t + 0.3, len * 0.97, 34 * dyn, true);
         note(CH.bass, key.note(deg, 48), t, len * 0.99, 28, true);
       }
       if (style === "nordic") {
@@ -844,7 +849,7 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
             : style === "nordic"
               ? 60
               : style === "deep_sleep"
-                ? 72
+                ? 60
                 : 72;
       // Derin uykuda melodi seyrek: her olcude degil, yumusak ve az nota
       const playMelody =
@@ -866,14 +871,19 @@ export function composeMusic(style: MusicStyle, seed: number, durationSec: numbe
             melodyDeg = sorted[r() < 0.7 || sorted[0] !== prev ? 0 : 1];
           }
           // Ust/alt sinira yaklasinca geri yansit: melodi bir notada takilip kalmasin
-          if (melodyDeg > 10) melodyDeg -= 2 + Math.floor(r() * 2);
+          // Uyku stillerinde melodi tavani oktav (C5 civari): tiz nota kulagi yorar
+          const ceil =
+            style === "piano" || style === "piano_violin" || style === "deep_sleep" ? 7 : 10;
+          while (melodyDeg > ceil) melodyDeg -= 2 + Math.floor(r() * 2);
           if (melodyDeg < 3) melodyDeg += 2 + Math.floor(r() * 2);
           // Ayni nota ust uste ucuncu kez gelmesin
           if (melodyDeg === last1 && last1 === last2) melodyDeg += r() < 0.5 ? -1 : 1;
           last2 = last1;
           last1 = melodyDeg;
           const isLast = section === "outro" && i === rhythm.length - 1;
-          const n = key.note(isLast ? 7 : melodyDeg, base);
+          let n = key.note(isLast ? 7 : melodyDeg, base);
+          // Uyku stillerinde kesin tavan: E5 (76)
+          if (ceil === 7) while (n > 76) n -= 12;
           // Ayni nota tekrarinda onceki nota yenisini susturmasin diye kisa bosluk
           const d = dur * beat * 0.97;
           note(

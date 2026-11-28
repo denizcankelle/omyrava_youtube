@@ -5,9 +5,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getAsset } from "./assets";
+import { comfortSummary } from "./comfort";
 import type { DB } from "./db";
 import type { AudioAnalysis } from "./media";
 import { getProject } from "./projects";
+import { resName } from "./render";
 import { currentThumbnail, getMetadata, latestFullRender, metadataIssues } from "./publish";
 
 export interface CheckItem {
@@ -36,9 +38,9 @@ export function uploadChecklist(db: DB, projectId: string, audioAssetId?: string
       ok: Math.abs(dur - project.duration_sec) <= 2,
       detail: `${(dur / 3600).toFixed(2)} saat`,
     });
-    const want = project.resolution === "4k" ? "4k" : "1080p";
+    const want = resName(project.resolution);
     out.push({
-      label: `Çözünürlük ${want === "4k" ? "4K (3840×2160)" : "1080p"}`,
+      label: `Çözünürlük ${want === "4k" ? "4K (3840×2160)" : want === "2k" ? "2K (2560×1440)" : "1080p"}`,
       ok: render.profile.endsWith(want),
     });
   }
@@ -80,6 +82,12 @@ export function uploadChecklist(db: DB, projectId: string, audioAssetId?: string
       ok: i !== undefined && tp !== undefined && Math.abs(i + 18) <= 1.5 && tp <= -1,
       detail: i !== undefined ? `${i.toFixed(1)} LUFS, tepe ${tp?.toFixed(1)} dBTP` : undefined,
     });
+    if (a.comfort)
+      out.push({
+        label: "Ses rahatlık testi (sert ve tiz bölge sınırın altında)",
+        ok: a.comfort.ok,
+        detail: comfortSummary(a.comfort),
+      });
   }
   const thumb = currentThumbnail(db, projectId);
   const thumbOk = Boolean(thumb && fs.existsSync(thumb.file_path));
@@ -97,6 +105,13 @@ export function uploadChecklist(db: DB, projectId: string, audioAssetId?: string
     label: "Kapak testi için kapak-2.jpg ve kapak-3.jpg",
     ok: has("kapak-2.jpg") && has("kapak-3.jpg"),
     warn: !(has("kapak-2.jpg") && has("kapak-3.jpg")),
+  });
+  out.push({
+    label: "Yazısız 2K kapak (kapak-yazisiz-2k.jpg, 2 MB altı)",
+    ok:
+      has("kapak-yazisiz-2k.jpg") &&
+      fs.statSync(path.join(dir!, "kapak-yazisiz-2k.jpg")).size <= 2 * 1024 * 1024,
+    warn: !has("kapak-yazisiz-2k.jpg"),
   });
   out.push({ label: "Shorts (short.mp4)", ok: has("short.mp4"), warn: !has("short.mp4") });
   out.push({

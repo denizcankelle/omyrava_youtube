@@ -1,3 +1,4 @@
+import type { ComfortResult } from "./comfort";
 /**
  * FFmpeg ciktisini ayristirma ve kalite kurallari. Saf fonksiyonlar; test edilebilir.
  */
@@ -30,6 +31,8 @@ export interface AudioAnalysis {
   clippedSamples: number | null;
   silences: Silence[];
   warnings: Warning[];
+  /** Rahatlik denetimi (sertlik/tizlik); eski kayitlarda yok. */
+  comfort?: ComfortResult;
 }
 
 export interface VisualAnalysis {

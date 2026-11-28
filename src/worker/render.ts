@@ -8,6 +8,7 @@ import { parseDuration, probeDurationSec, resolveFfmpegPath, runFfmpeg } from ".
 import { JobError, isCancelled, logJob, updateProgress } from "../lib/jobs";
 import { getProject, projectOutputDir, tryProjectStatus } from "../lib/projects";
 import {
+  resName,
   type Manifest,
   type QaIssue,
   type Stage,
@@ -84,7 +85,7 @@ export const renderVideo: JobHandler = async (ctx: HandlerContext) => {
 
   const full = opts.mode === "full";
   const { w: W, h: H } = dims(project.resolution);
-  const res = project.resolution === "4k" ? "4k" : "1080p";
+  const res = resName(project.resolution);
   const targetSec = full ? project.duration_sec : Math.min(PREVIEW_SECONDS, project.duration_sec);
   const ffmpeg = resolveFfmpegPath(ffmpegPathSetting);
   const dataDir = ctx.dataDir ?? path.join(outputDir, ".work");

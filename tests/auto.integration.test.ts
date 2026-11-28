@@ -69,6 +69,9 @@ describe("tam otomatik akis (FFmpeg ile)", () => {
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "baslik-aciklama.txt"))).toBe(true);
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "kapak.jpg"))).toBe(true);
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "kapak-2.jpg"))).toBe(true);
+    const clean = path.join(fin.r.packageDir as string, "kapak-yazisiz-2k.jpg");
+    expect(fs.existsSync(clean)).toBe(true);
+    expect(fs.statSync(clean).size).toBeLessThanOrEqual(2 * 1024 * 1024);
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "kapak-3.jpg"))).toBe(true);
     expect(fs.existsSync(path.join(fin.r.packageDir as string, "short.mp4"))).toBe(true);
     expect(fs.readFileSync(path.join(fin.r.packageDir as string, "ceviriler.txt"), "utf8")).toMatch(

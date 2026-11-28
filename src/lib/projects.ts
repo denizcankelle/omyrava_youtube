@@ -30,7 +30,7 @@ export const createProjectSchema = z.object({
     .enum(Object.keys(CATEGORIES) as [keyof typeof CATEGORIES])
     .refine((c) => !RETIRED_CATEGORIES.includes(c), "Bu tür kullanımdan kaldırıldı"),
   durationHours: z.coerce.number().refine((v) => [1, 3, 8, 10].includes(v), "Geçersiz süre"),
-  resolution: z.enum(["1080p", "4k"]).default("1080p"),
+  resolution: z.enum(["1080p", "2k", "4k"]).default("2k"),
   targetDate: z.string().trim().optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional(),
 });
@@ -42,7 +42,7 @@ export interface Project {
   title: string;
   category: keyof typeof CATEGORIES;
   duration_sec: number;
-  resolution: "1080p" | "4k";
+  resolution: "1080p" | "2k" | "4k";
   status: ProjectStatus;
   target_date: string | null;
   notes: string | null;

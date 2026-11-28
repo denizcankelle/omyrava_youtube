@@ -10,6 +10,7 @@ import { aiStyleForCategory, isAiReady } from "../lib/ai";
 import { isImageAiReady } from "../lib/aiimage";
 import { RECIPES, randomSeed, thumbText } from "../lib/auto";
 import { getConfig } from "../lib/config";
+import { COVER_MAX_BYTES, cleanCoverArgs } from "../lib/cover";
 import { audit } from "../lib/db";
 import {
   type Job,
@@ -390,6 +391,26 @@ export const autoFinalize: JobHandler = async (ctx) => {
     const a = getAsset(db, id);
     if (a && fs.existsSync(a.file_path))
       fs.copyFileSync(a.file_path, path.join(pkg.dir, `kapak-${i + 2}.jpg`));
+  }
+
+  // Yazisiz 2K gorsel: kullanici bunu dogrudan kapak olarak yukleyebilir (YouTube siniri 2 MB)
+  try {
+    const still = getAsset(db, r.stillAssetId);
+    if (still && fs.existsSync(still.file_path)) {
+      const ff = resolveFfmpegPath(ctx.ffmpegPathSetting);
+      const out = path.join(pkg.dir, "kapak-yazisiz-2k.jpg");
+      for (const args of cleanCoverArgs(still.file_path, out)) {
+        await runFfmpeg({ ffmpegPath: ff, args });
+        if (fs.statSync(out).size <= COVER_MAX_BYTES) break;
+      }
+    }
+  } catch (err) {
+    logJob(
+      db,
+      job.id,
+      "warn",
+      `Yazısız kapak hazırlanamadı: ${err instanceof Error ? err.message : err}`,
+    );
   }
 
   // Shorts: 30 sn dikey tanitim klibi (basarisiz olursa paket yine hazir)

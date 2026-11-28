@@ -15,7 +15,8 @@ import { JobError, isCancelled, logJob, updateProgress } from "../lib/jobs";
 import { sequenceArgs, sequenceDuration } from "../lib/mix";
 import { getProject } from "../lib/projects";
 import { gainToTarget } from "../lib/synth";
-import { type JobHandler, analyzeAudioFile } from "./handlers";
+import { comfortClass, comfortSummary } from "../lib/comfort";
+import { type JobHandler, analyzeAudioFile, measureComfort, solveComfort } from "./handlers";
 
 interface BridgeEvent {
   event: string;
@@ -154,7 +155,19 @@ export const aiMusic: JobHandler = async (ctx) => {
       ),
       shouldCancel: () => isCancelled(db, job.id),
     });
-    const measured = await analyzeAudioFile(ctx, ffmpeg, seq, [0.75, 0.85]);
+    const cls = comfortClass(p.style);
+    const { first: cm, fix } = await solveComfort(ffmpeg, seq, cls);
+    let src = seq;
+    if (cm && fix.length) {
+      logJob(db, job.id, "info", `Yumuşatılıyor: ${comfortSummary(cm)}`);
+      src = path.join(work, "soft.flac");
+      await runFfmpeg({
+        ffmpegPath: ffmpeg,
+        args: ["-y", "-i", seq, "-af", fix.join(","), "-c:a", "flac", src],
+        shouldCancel: () => isCancelled(db, job.id),
+      });
+    }
+    const measured = await analyzeAudioFile(ctx, ffmpeg, src, [0.75, 0.85]);
     if (!measured.loudness) throw new JobError("MEASURE_FAILED", "Üretilen müzik ölçülemedi");
     const gain = gainToTarget(measured.loudness.input_i, measured.loudness.input_tp);
     const dir = assetDir(ctx.dataDir ?? ctx.outputDir, project.id);
@@ -162,7 +175,7 @@ export const aiMusic: JobHandler = async (ctx) => {
     const dest = path.join(dir, `ai-${p.style}-${p.seed}.flac`);
     await runFfmpeg({
       ffmpegPath: ffmpeg,
-      args: ["-y", "-i", seq, "-af", `volume=${gain}dB`, "-ar", "48000", "-c:a", "flac", dest],
+      args: ["-y", "-i", src, "-af", `volume=${gain}dB`, "-ar", "48000", "-c:a", "flac", dest],
       shouldCancel: () => isCancelled(db, job.id),
     });
     const asset = await registerDerivedAsset(db, {
@@ -189,6 +202,8 @@ export const aiMusic: JobHandler = async (ctx) => {
       }),
     );
     const after = await analyzeAudioFile(ctx, ffmpeg, dest, [0.9, 0.99]);
+    const comfort = await measureComfort(ffmpeg, dest, cls);
+    if (comfort) after.comfort = comfort;
     updateAssetMeta(db, asset.id, { durationSec: after.durationSec, analysis: after });
     logJob(db, job.id, "info", `Hazır: ${asset.original_name}`);
     return { assetId: asset.id, ai: true };
